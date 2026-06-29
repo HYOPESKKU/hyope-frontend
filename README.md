@@ -19,4 +19,7 @@ samples, guidance on mobile development, and a full API reference.
 ## Screenshots
 
 ### Dashboard
-![Dashboard](docs/screenshots/dashboard.png)
+![Dashboard](docs/screenshots/dashboard1.png)
+![Dashboard](docs/screenshots/dashboard2.png)
+![Dashboard](docs/screenshots/dashboard3.png)
+![Dashboard](docs/screenshots/dashboard4.png)
