@@ -1,0 +1,394 @@
+import 'package:flutter/material.dart';
+
+import '../painters/hyope_painters.dart';
+import 'common_widgets.dart';
+
+class MetricSummaryCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final double score;
+  final List<double> values;
+  final List<DateTime> dates;
+  final Color color;
+  final IconData icon;
+  final bool lowGood;
+
+  const MetricSummaryCard({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.score,
+    required this.values,
+    required this.dates,
+    required this.color,
+    required this.icon,
+    required this.lowGood,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final previousWeek = values.length > 7 ? values[values.length - 8] : score;
+    final diff = score - previousWeek;
+    final isBetter = lowGood ? diff <= 0 : diff >= 0;
+    final statusColor = isBetter ? const Color(0xFF2FB86E) : const Color(0xFFE74747);
+    final diffText = '${diff >= 0 ? '+' : ''}${diff.toStringAsFixed(1)}';
+    final chartStart = values.length > 7 ? values.length - 7 : 0;
+    final chartValues = values.sublist(chartStart);
+    final chartDates = dates.length == values.length ? dates.sublist(chartStart) : const <DateTime>[];
+
+    return HyopeCard(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 18),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  isBetter ? '개선' : '주의',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w900,
+                    color: statusColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF687085),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                score.toStringAsFixed(1),
+                style: const TextStyle(
+                  fontSize: 24,
+                  height: 1,
+                  color: Color(0xFF182033),
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Padding(
+                padding: EdgeInsets.only(bottom: 2),
+                child: Text('/10', style: TextStyle(color: Color(0xFF8A92A6))),
+              ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          Text(
+            subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 10.5, color: Color(0xFF9AA2B4)),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  '7일 전 대비',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    color: Color(0xFF8A92A6),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Text(
+                diffText,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  color: statusColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 9),
+          SizedBox(
+            height: 56,
+            child: CustomPaint(
+              painter: MiniLineChartPainter(
+                values: chartValues,
+                dates: chartDates,
+                color: color,
+                showDateLabels: true,
+              ),
+              size: Size.infinite,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class CompactTrendCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final List<double> values;
+  final Color color;
+  final IconData icon;
+  final bool lowGood;
+
+  const CompactTrendCard({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.values,
+    required this.color,
+    required this.icon,
+    required this.lowGood,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final latest = values.isEmpty ? 0.0 : values.last;
+    final previousWeek = values.length > 7 ? values[values.length - 8] : latest;
+    final diff = latest - previousWeek;
+    final isBetter = lowGood ? diff <= 0 : diff >= 0;
+    final statusColor = isBetter ? const Color(0xFF2FB86E) : const Color(0xFFE74747);
+    final diffText = '${diff >= 0 ? '+' : ''}${diff.toStringAsFixed(1)}';
+
+    return HyopeCard(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 18),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  isBetter ? '개선' : '주의',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w900,
+                    color: statusColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF687085),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                latest.toStringAsFixed(1),
+                style: const TextStyle(
+                  fontSize: 24,
+                  height: 1,
+                  color: Color(0xFF182033),
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Padding(
+                padding: EdgeInsets.only(bottom: 2),
+                child: Text('/10', style: TextStyle(color: Color(0xFF8A92A6))),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF9AA2B4)),
+                ),
+              ),
+              Text(
+                diffText,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w900,
+                  color: statusColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 52,
+            child: CustomPaint(
+              painter: MiniLineChartPainter(values: values.takeLast(14), color: color),
+              size: Size.infinite,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class TrendDetailCard extends StatelessWidget {
+  final String title;
+  final String description;
+  final List<double> values;
+  final Color color;
+  final bool lowGood;
+
+  const TrendDetailCard({
+    super.key,
+    required this.title,
+    required this.description,
+    required this.values,
+    required this.color,
+    required this.lowGood,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final latest = values.isEmpty ? 0.0 : values.last;
+    final previousWeek = values.length > 7 ? values[values.length - 8] : latest;
+    final diff = latest - previousWeek;
+    final isBetter = lowGood ? diff <= 0 : diff >= 0;
+
+    return HyopeCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionTitle(
+            title: title,
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: (isBetter ? const Color(0xFF2FB86E) : const Color(0xFFE74747))
+                    .withOpacity(0.12),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                isBetter ? '개선' : '주의',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: isBetter ? const Color(0xFF2FB86E) : const Color(0xFFE74747),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(description, style: const TextStyle(color: Color(0xFF8A92A6), fontSize: 13)),
+          const SizedBox(height: 18),
+          SizedBox(
+            height: 150,
+            child: CustomPaint(
+              painter: LineChartPainter(values: values, color: color),
+              size: Size.infinite,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              _SmallInfoBox(label: '최근 점수', value: latest.toStringAsFixed(1)),
+              const SizedBox(width: 10),
+              _SmallInfoBox(
+                label: '7일 전 대비',
+                value: '${diff >= 0 ? '+' : ''}${diff.toStringAsFixed(1)}',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SmallInfoBox extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _SmallInfoBox({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F8FC),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE8ECF5)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: const TextStyle(color: Color(0xFF8A92A6), fontSize: 12)),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: const TextStyle(
+                color: Color(0xFF182033),
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+extension TakeLastList on List<double> {
+  List<double> takeLast(int count) {
+    if (length <= count) return this;
+    return sublist(length - count);
+  }
+}
