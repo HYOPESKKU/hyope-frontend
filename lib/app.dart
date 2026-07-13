@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'screens/main_screen.dart';
+import 'screens/role_selection_screen.dart';
 
 class HyopeApp extends StatelessWidget {
   const HyopeApp({super.key});
@@ -9,7 +9,7 @@ class HyopeApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Hyope Guardian App',
+      title: 'Hyope',
       theme: ThemeData(
         useMaterial3: true,
         visualDensity: VisualDensity.compact,
@@ -20,7 +20,7 @@ class HyopeApp extends StatelessWidget {
         ),
         scaffoldBackgroundColor: const Color(0xFFF5F7FB),
       ),
-      home: const MainScreen(),
+      home: const RoleSelectionScreen(),
     );
   }
 }

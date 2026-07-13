@@ -1,24 +1,37 @@
 import 'package:flutter/material.dart';
 
-import '../data/mock_data.dart';
+import '../models/hyope_models.dart';
 import '../widgets/common_widgets.dart';
 
 class UserSettingsScreen extends StatelessWidget {
+  final AppUserRole userRole;
+  final UserProfile userProfile;
+  final RecipientSummary recipient;
   final bool biometricLockEnabled;
   final bool darkModeEnabled;
+  final VoidCallback onEditUserProfile;
+  final VoidCallback onEditRecipient;
   final ValueChanged<bool> onBiometricLockChanged;
   final ValueChanged<bool> onDarkModeChanged;
 
   const UserSettingsScreen({
     super.key,
+    required this.userRole,
+    required this.userProfile,
+    required this.recipient,
     required this.biometricLockEnabled,
     required this.darkModeEnabled,
+    required this.onEditUserProfile,
+    required this.onEditRecipient,
     required this.onBiometricLockChanged,
     required this.onDarkModeChanged,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isSocialWorker = userRole == AppUserRole.socialWorker;
+    final userTitle = isSocialWorker ? '복지사 정보' : '보호자 정보';
+
     return SafeArea(
       child: Center(
         child: ConstrainedBox(
@@ -26,9 +39,11 @@ class UserSettingsScreen extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
             children: [
-              const PageHeader(
-                title: '사용자 설정',
-                subtitle: '보호자와 피보호자 정보를 확인하고 앱 환경을 조정합니다.',
+              PageHeader(
+                title: '내 정보',
+                subtitle: isSocialWorker
+                    ? '복지사 본인과 선택한 피보호자 정보를 관리합니다.'
+                    : '보호자와 피보호자 정보를 확인하고 수정합니다.',
                 icon: Icons.manage_accounts_outlined,
               ),
               const SizedBox(height: 14),
@@ -36,22 +51,25 @@ class UserSettingsScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SectionTitle(title: '피보호자 정보'),
+                    SectionTitle(
+                      title: userTitle,
+                      trailing: _EditButton(onPressed: onEditUserProfile),
+                    ),
                     const SizedBox(height: 10),
                     SettingsInfoRow(
                       icon: Icons.person_outline,
                       title: '이름',
-                      value: MockData.recipient.name,
-                    ),
-                    SettingsInfoRow(
-                      icon: Icons.group_outlined,
-                      title: '관계',
-                      value: MockData.recipient.relation,
+                      value: userProfile.name,
                     ),
                     SettingsInfoRow(
                       icon: Icons.call_outlined,
                       title: '연락처',
-                      value: MockData.recipient.phoneNumber,
+                      value: userProfile.phoneNumber,
+                    ),
+                    SettingsInfoRow(
+                      icon: Icons.email_outlined,
+                      title: '이메일',
+                      value: userProfile.email,
                     ),
                   ],
                 ),
@@ -60,7 +78,41 @@ class UserSettingsScreen extends StatelessWidget {
               HyopeCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
+                    SectionTitle(
+                      title: '피보호자 정보',
+                      trailing: _EditButton(onPressed: onEditRecipient),
+                    ),
+                    const SizedBox(height: 10),
+                    SettingsInfoRow(
+                      icon: Icons.person_outline,
+                      title: '이름',
+                      value: recipient.name,
+                    ),
+                    SettingsInfoRow(
+                      icon: Icons.cake_outlined,
+                      title: '나이 / 성별',
+                      value:
+                          '만 ${recipient.age}세 / ${recipient.gender.label}',
+                    ),
+                    SettingsInfoRow(
+                      icon: Icons.group_outlined,
+                      title: isSocialWorker ? '관리 구분' : '관계',
+                      value: recipient.relation,
+                    ),
+                    SettingsInfoRow(
+                      icon: Icons.call_outlined,
+                      title: '연락처',
+                      value: recipient.phoneNumber,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              const HyopeCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     SectionTitle(title: 'ARS 모니터링 설정'),
                     SizedBox(height: 10),
                     SettingsInfoRow(
@@ -108,6 +160,27 @@ class UserSettingsScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _EditButton extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _EditButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(Icons.edit_outlined, size: 17),
+      label: const Text('수정'),
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        textStyle: const TextStyle(fontWeight: FontWeight.w800),
       ),
     );
   }

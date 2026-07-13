@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../data/mock_data.dart';
 import '../models/hyope_models.dart';
 import '../widgets/adherence_widgets.dart';
 import '../widgets/header_section.dart';
@@ -8,6 +7,7 @@ import '../widgets/metric_widgets.dart';
 import '../widgets/risk_widgets.dart';
 
 class DashboardScreen extends StatelessWidget {
+  final RecipientSummary recipient;
   final List<DailyAssessment> assessments;
   final DateTime selectedMonth;
   final DateTime? selectedDate;
@@ -19,6 +19,7 @@ class DashboardScreen extends StatelessWidget {
 
   const DashboardScreen({
     super.key,
+    required this.recipient,
     required this.assessments,
     required this.selectedMonth,
     required this.selectedDate,
@@ -50,7 +51,7 @@ class DashboardScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       HeaderSection(
-                        recipient: MockData.recipient,
+                        recipient: recipient,
                         latestAssessment: currentAssessment,
                       ),
                       const SizedBox(height: 14),

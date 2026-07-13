@@ -5,11 +5,26 @@ import '../models/hyope_models.dart';
 import '../utils/adherence_utils.dart';
 import '../utils/date_utils.dart';
 import 'dashboard_screen.dart';
+import 'edit_recipient_screen.dart';
+import 'edit_user_profile_screen.dart';
 import 'notification_settings_screen.dart';
 import 'user_settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final AppUserRole userRole;
+  final RecipientSummary recipient;
+  final UserProfile? userProfile;
+  final ValueChanged<UserProfile>? onUserProfileChanged;
+  final ValueChanged<RecipientSummary>? onRecipientChanged;
+
+  const MainScreen({
+    super.key,
+    required this.userRole,
+    required this.recipient,
+    this.userProfile,
+    this.onUserProfileChanged,
+    this.onRecipientChanged,
+  });
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -18,6 +33,8 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   late final List<DailyAssessment> assessments;
   late DateTime selectedMonth;
+  late UserProfile currentUser;
+  late RecipientSummary currentRecipient;
   DateTime? selectedDate;
   bool showAdherenceStats = false;
   int selectedTabIndex = 0;
@@ -33,7 +50,12 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    assessments = MockData.last30Days();
+    currentRecipient = widget.recipient;
+    currentUser = widget.userProfile ??
+        (widget.userRole == AppUserRole.guardian
+            ? MockData.guardianProfile
+            : MockData.socialWorkerProfile);
+    assessments = MockData.last30Days(recipientId: currentRecipient.id);
     final latestDate = dateOnly(assessments.last.measuredAt);
     selectedDate = null;
     selectedMonth = DateTime(latestDate.year, latestDate.month);
@@ -45,13 +67,69 @@ class _MainScreenState extends State<MainScreen> {
     return findAssessmentByDate(assessments, date);
   }
 
+  Future<void> _editUserProfile() async {
+    final updated = await Navigator.of(context).push<UserProfile>(
+      MaterialPageRoute<UserProfile>(
+        builder: (_) => EditUserProfileScreen(profile: currentUser),
+      ),
+    );
+
+    if (updated == null || !mounted) return;
+
+    setState(() => currentUser = updated);
+    widget.onUserProfileChanged?.call(updated);
+    _showSavedMessage('내 정보가 수정되었습니다.');
+  }
+
+  Future<void> _editRecipient() async {
+    final updated = await Navigator.of(context).push<RecipientSummary>(
+      MaterialPageRoute<RecipientSummary>(
+        builder: (_) => EditRecipientScreen(
+          recipient: currentRecipient,
+          userRole: widget.userRole,
+        ),
+      ),
+    );
+
+    if (updated == null || !mounted) return;
+
+    setState(() => currentRecipient = updated);
+    widget.onRecipientChanged?.call(updated);
+    _showSavedMessage('피보호자 정보가 수정되었습니다.');
+  }
+
+  void _showSavedMessage(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isSocialWorker = widget.userRole == AppUserRole.socialWorker;
+
     return Scaffold(
+      appBar: isSocialWorker
+          ? AppBar(
+              backgroundColor: const Color(0xFFF5F7FB),
+              surfaceTintColor: Colors.transparent,
+              title: Text(
+                '${currentRecipient.name} 대시보드',
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            )
+          : null,
       body: IndexedStack(
         index: selectedTabIndex,
         children: [
           DashboardScreen(
+            recipient: currentRecipient,
             assessments: assessments,
             selectedMonth: selectedMonth,
             selectedDate: selectedDate,
@@ -85,10 +163,19 @@ class _MainScreenState extends State<MainScreen> {
             },
           ),
           UserSettingsScreen(
+            userRole: widget.userRole,
+            userProfile: currentUser,
+            recipient: currentRecipient,
             biometricLockEnabled: biometricLockEnabled,
             darkModeEnabled: darkModeEnabled,
-            onBiometricLockChanged: (value) => setState(() => biometricLockEnabled = value),
-            onDarkModeChanged: (value) => setState(() => darkModeEnabled = value),
+            onEditUserProfile: _editUserProfile,
+            onEditRecipient: _editRecipient,
+            onBiometricLockChanged: (value) {
+              setState(() => biometricLockEnabled = value);
+            },
+            onDarkModeChanged: (value) {
+              setState(() => darkModeEnabled = value);
+            },
           ),
         ],
       ),
@@ -111,7 +198,7 @@ class _MainScreenState extends State<MainScreen> {
           NavigationDestination(
             icon: Icon(Icons.manage_accounts_outlined),
             selectedIcon: Icon(Icons.manage_accounts_rounded),
-            label: '사용자 설정',
+            label: '내 정보',
           ),
         ],
       ),

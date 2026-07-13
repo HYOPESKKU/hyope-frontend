@@ -7,41 +7,113 @@ import '../models/hyope_models.dart';
 // -----------------------------------------------------------------------------
 
 class MockData {
-  static const recipient = RecipientSummary(
+  static final guardianProfile = UserProfile(
     id: 1,
-    name: 'OOO',
-    relation: '부모님',
+    role: AppUserRole.guardian,
+    name: '김민수',
+    phoneNumber: '010-9876-5432',
+    email: 'guardian@hyope.kr',
+  );
+
+  static final socialWorkerProfile = UserProfile(
+    id: 2,
+    role: AppUserRole.socialWorker,
+    name: '이지은',
+    phoneNumber: '010-5555-2026',
+    email: 'worker@hyope.kr',
+  );
+
+  static final guardianRecipient = RecipientSummary(
+    id: 1,
+    name: '김영희',
+    birthDate: DateTime(1948, 3, 18),
+    gender: Gender.female,
+    relation: '어머니',
     phoneNumber: '010-1234-5678',
   );
 
-  static List<DailyAssessment> last30Days() {
+  static final managedRecipients = <RecipientSummary>[
+    RecipientSummary(
+      id: 101,
+      name: '박정수',
+      birthDate: DateTime(1942, 8, 4),
+      gender: Gender.male,
+      relation: '담당 피보호자',
+      phoneNumber: '010-2101-1001',
+    ),
+    RecipientSummary(
+      id: 102,
+      name: '이순자',
+      birthDate: DateTime(1946, 11, 21),
+      gender: Gender.female,
+      relation: '담당 피보호자',
+      phoneNumber: '010-2101-1002',
+    ),
+    RecipientSummary(
+      id: 103,
+      name: '최영식',
+      birthDate: DateTime(1939, 5, 9),
+      gender: Gender.male,
+      relation: '담당 피보호자',
+      phoneNumber: '010-2101-1003',
+    ),
+    RecipientSummary(
+      id: 104,
+      name: '한명숙',
+      birthDate: DateTime(1951, 1, 30),
+      gender: Gender.female,
+      relation: '담당 피보호자',
+      phoneNumber: '010-2101-1004',
+    ),
+    RecipientSummary(
+      id: 105,
+      name: '정기철',
+      birthDate: DateTime(1944, 6, 16),
+      gender: Gender.male,
+      relation: '담당 피보호자',
+      phoneNumber: '010-2101-1005',
+    ),
+  ];
+
+  static List<DailyAssessment> last30Days({int recipientId = 1}) {
     final today = DateTime.now();
     final List<DailyAssessment> result = [];
+    final recipientBias = ((recipientId * 17) % 6) * 0.38;
+    final emotionBias = ((recipientId * 11) % 4) * 0.22;
 
     for (int i = 0; i < 30; i++) {
       final date = DateTime(today.year, today.month, today.day)
           .subtract(Duration(days: 29 - i));
 
-      final wave = math.sin(i / 3.2) * 0.9;
-      final healthRisk = (2.2 + wave + (i % 9 == 0 ? 1.2 : 0.0))
-          .clamp(0.0, 10.0)
-          .toDouble();
-      final emotional = (6.6 - wave + (i % 10 == 3 ? -1.5 : 0.0))
-          .clamp(0.0, 10.0)
-          .toDouble();
-      final depression = (10 - emotional + 0.7).clamp(0.0, 10.0).toDouble();
-      final cognitive = (7.0 + math.cos(i / 4.0) * 0.7).clamp(0.0, 10.0).toDouble();
-      final missedPenalty = (i % 7 == 0 ? 1.0 : 0.0) + (i % 11 == 0 ? 1.3 : 0.0);
-      final overallRisk = (healthRisk * 0.45 + depression * 0.25 + missedPenalty + 1.0)
-          .clamp(0.0, 10.0)
-          .toDouble();
+      final wave = math.sin((i + recipientId % 5) / 3.2) * 0.9;
+      final healthRisk =
+          (2.0 + recipientBias + wave + (i % 9 == 0 ? 1.2 : 0.0))
+              .clamp(0.0, 10.0)
+              .toDouble();
+      final emotional =
+          (7.1 - emotionBias - wave + (i % 10 == 3 ? -1.5 : 0.0))
+              .clamp(0.0, 10.0)
+              .toDouble();
+      final depression =
+          (10 - emotional + 0.7).clamp(0.0, 10.0).toDouble();
+      final cognitive =
+          (7.0 + math.cos((i + recipientId % 3) / 4.0) * 0.7)
+              .clamp(0.0, 10.0)
+              .toDouble();
+      final missedPenalty =
+          (i % 7 == 0 ? 1.0 : 0.0) + (i % 11 == 0 ? 1.3 : 0.0);
+      final overallRisk =
+          (healthRisk * 0.45 + depression * 0.25 + missedPenalty + 1.0)
+              .clamp(0.0, 10.0)
+              .toDouble();
       final risk = riskLevelFromScore(overallRisk);
+      final assessmentId = recipientId * 100 + i + 1;
 
       result.add(
         DailyAssessment(
-          id: i + 1,
-          recipientId: 1,
-          callLogId: i + 1,
+          id: assessmentId,
+          recipientId: recipientId,
+          callLogId: assessmentId,
           measuredAt: DateTime(date.year, date.month, date.day, 7, 4),
           depressionScore: depression,
           emotionalStability: emotional,
@@ -50,14 +122,20 @@ class MockData {
           overallRisk: overallRisk,
           riskLevel: risk,
           recommendation: risk.actionDescription,
-          adherenceRecords: _adherenceRecords(i + 1, i),
+          adherenceRecords: _adherenceRecords(
+            assessmentId,
+            i + recipientId,
+          ),
         ),
       );
     }
     return result;
   }
 
-  static List<AdherenceRecord> _adherenceRecords(int assessmentId, int index) {
+  static List<AdherenceRecord> _adherenceRecords(
+    int assessmentId,
+    int index,
+  ) {
     final mealMiss = index % 7 == 0;
     final medMiss = index % 11 == 0;
     final unknownDinner = index % 13 == 0;

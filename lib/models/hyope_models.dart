@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 // Models: 백엔드 DTO와 최대한 비슷하게 맞춘 프론트엔드 모델
 // -----------------------------------------------------------------------------
 
+enum AppUserRole { guardian, socialWorker }
+
+enum Gender { male, female }
+
 enum RiskLevel { observe, caution, warning, high }
 
 enum AdherenceType { meal, medication }
@@ -11,6 +15,29 @@ enum AdherenceType { meal, medication }
 enum Slot { breakfast, lunch, dinner }
 
 enum AdherenceAggregate { done, partial, missed, unknown, notNeeded }
+
+
+extension AppUserRoleView on AppUserRole {
+  String get label {
+    switch (this) {
+      case AppUserRole.guardian:
+        return '보호자';
+      case AppUserRole.socialWorker:
+        return '복지사';
+    }
+  }
+}
+
+extension GenderView on Gender {
+  String get label {
+    switch (this) {
+      case Gender.male:
+        return '남성';
+      case Gender.female:
+        return '여성';
+    }
+  }
+}
 
 extension RiskLevelView on RiskLevel {
   String get label {
@@ -108,18 +135,85 @@ extension AdherenceAggregateView on AdherenceAggregate {
   }
 }
 
+class UserProfile {
+  final int id;
+  final AppUserRole role;
+  final String name;
+  final String phoneNumber;
+  final String email;
+
+  const UserProfile({
+    required this.id,
+    required this.role,
+    required this.name,
+    required this.phoneNumber,
+    required this.email,
+  });
+
+  UserProfile copyWith({
+    int? id,
+    AppUserRole? role,
+    String? name,
+    String? phoneNumber,
+    String? email,
+  }) {
+    return UserProfile(
+      id: id ?? this.id,
+      role: role ?? this.role,
+      name: name ?? this.name,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      email: email ?? this.email,
+    );
+  }
+}
+
 class RecipientSummary {
   final int id;
   final String name;
+  final DateTime birthDate;
+  final Gender gender;
   final String relation;
   final String phoneNumber;
 
   const RecipientSummary({
     required this.id,
     required this.name,
+    required this.birthDate,
+    required this.gender,
     required this.relation,
     required this.phoneNumber,
   });
+
+  int get age => calculateAge(birthDate);
+
+  String get initial => name.trim().isEmpty ? '?' : name.trim()[0];
+
+  RecipientSummary copyWith({
+    int? id,
+    String? name,
+    DateTime? birthDate,
+    Gender? gender,
+    String? relation,
+    String? phoneNumber,
+  }) {
+    return RecipientSummary(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      birthDate: birthDate ?? this.birthDate,
+      gender: gender ?? this.gender,
+      relation: relation ?? this.relation,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+    );
+  }
+}
+
+int calculateAge(DateTime birthDate) {
+  final today = DateTime.now();
+  var result = today.year - birthDate.year;
+  final birthdayHasPassed = today.month > birthDate.month ||
+      (today.month == birthDate.month && today.day >= birthDate.day);
+  if (!birthdayHasPassed) result--;
+  return result;
 }
 
 class DailyAssessment {
