@@ -12,6 +12,7 @@ class MetricSummaryCard extends StatelessWidget {
   final Color color;
   final IconData icon;
   final bool lowGood;
+  final String helpDescription;
 
   const MetricSummaryCard({
     super.key,
@@ -23,6 +24,7 @@ class MetricSummaryCard extends StatelessWidget {
     required this.color,
     required this.icon,
     required this.lowGood,
+    required this.helpDescription,
   });
 
   @override
@@ -66,6 +68,19 @@ class MetricSummaryCard extends StatelessWidget {
                     fontWeight: FontWeight.w900,
                     color: statusColor,
                   ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                onPressed: () => _showMetricHelp(context),
+                tooltip: '$title 설명',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints.tightFor(width: 28, height: 28),
+                splashRadius: 16,
+                icon: const Icon(
+                  Icons.help_outline_rounded,
+                  size: 19,
+                  color: Color(0xFF8A92A6),
                 ),
               ),
             ],
@@ -143,6 +158,55 @@ class MetricSummaryCard extends StatelessWidget {
               ),
               size: Size.infinite,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showMetricHelp(BuildContext context) {
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 12, 8),
+        contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+        actionsPadding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+        title: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Icon(icon, color: color, size: 19),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                '$title란?',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF182033),
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          '$helpDescription\n\n이 점수는 통화 내용을 바탕으로 산출한 참고 지표이며, 의료진의 진단을 대신하지 않습니다.',
+          style: const TextStyle(
+            fontSize: 13.5,
+            height: 1.55,
+            color: Color(0xFF687085),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('확인'),
           ),
         ],
       ),

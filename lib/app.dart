@@ -9,7 +9,7 @@ class HyopeApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Hyope',
+      title: 'HYOPE',
       theme: ThemeData(
         useMaterial3: true,
         visualDensity: VisualDensity.compact,

@@ -52,7 +52,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                   ),
                   const SizedBox(height: 22),
                   const Text(
-                    '효프 화면 미리보기',
+                    'HYOPE 화면 미리보기',
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w900,
