@@ -6,9 +6,7 @@ import '../services/auth_service.dart';
 import '../services/guardian_service.dart';
 import '../services/recipient_service.dart';
 import '../widgets/auth_form_widgets.dart';
-import 'main_screen.dart';
 import 'recipient_list_screen.dart';
-import 'recipient_onboarding_screen.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -36,15 +34,6 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  /// 내 프로필과, 내 소속 recipient 목록을 함께 조회합니다.
-  Future<(UserProfile, List<RecipientSummary>)> _fetchProfileAndRecipients(
-    String loginId,
-  ) async {
-    final profile = await GuardianService().findMyProfile(loginId);
-    final recipients = await RecipientService().findByGuardian(profile.id);
-    return (profile, recipients);
-  }
-
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -58,46 +47,9 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       if (!mounted) return;
 
-      final (profile, recipients) = await _fetchProfileAndRecipients(loginId);
+      final profile = await GuardianService().findMyProfile(loginId);
+      final recipients = await RecipientService().findByGuardian(profile.id);
       if (!mounted) return;
-
-      if (widget.selectedRole == AppUserRole.guardian) {
-        if (recipients.isEmpty) {
-          final created = await Navigator.of(context).push<RecipientSummary>(
-            MaterialPageRoute<RecipientSummary>(
-              builder: (_) => RecipientOnboardingScreen(guardianId: profile.id),
-            ),
-          );
-          if (created == null || !mounted) return;
-
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute<void>(
-              builder: (_) => MainScreen(
-                userRole: AppUserRole.guardian,
-                userProfile: profile,
-                recipient: created,
-                onUserProfileChanged: (_) {},
-                onRecipientChanged: (_) {},
-              ),
-            ),
-          );
-          return;
-        }
-        if (recipients.length == 1) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute<void>(
-              builder: (_) => MainScreen(
-                userRole: AppUserRole.guardian,
-                userProfile: profile,
-                recipient: recipients.first,
-                onUserProfileChanged: (_) {},
-                onRecipientChanged: (_) {},
-              ),
-            ),
-          );
-          return;
-        }
-      }
 
       Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(
