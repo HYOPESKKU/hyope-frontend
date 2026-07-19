@@ -1,29 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../data/mock_data.dart';
 import '../models/hyope_models.dart';
-import 'main_screen.dart';
-import 'recipient_list_screen.dart';
+import 'login_screen.dart';
 
-/// 로그인/회원가입이 구현되기 전 역할별 화면 흐름을 확인하기 위한 임시 화면입니다.
-/// 인증 연동 후에는 로그인 응답의 역할에 따라 아래 두 화면으로 바로 분기하면 됩니다.
-class RoleSelectionScreen extends StatefulWidget {
+/// 앱 진입 시 역할을 먼저 고르고, 그 역할로 로그인 화면으로 이동합니다.
+class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
-
-  @override
-  State<RoleSelectionScreen> createState() => _RoleSelectionScreenState();
-}
-
-class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
-  late UserProfile guardianProfile;
-  late RecipientSummary guardianRecipient;
-
-  @override
-  void initState() {
-    super.initState();
-    guardianProfile = MockData.guardianProfile;
-    guardianRecipient = MockData.guardianRecipient;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +34,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                   ),
                   const SizedBox(height: 22),
                   const Text(
-                    'HYOPE 화면 미리보기',
+                    'HYOPE',
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w900,
@@ -61,7 +43,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    '로그인 기능이 연결되기 전, 사용자 역할에 따른 시작 화면을 확인할 수 있습니다.',
+                    '어떤 역할로 이용하시나요? 선택 후 로그인해주세요.',
                     style: TextStyle(
                       fontSize: 14,
                       height: 1.55,
@@ -76,16 +58,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (_) => MainScreen(
-                            userRole: AppUserRole.guardian,
-                            userProfile: guardianProfile,
-                            recipient: guardianRecipient,
-                            onUserProfileChanged: (updated) {
-                              setState(() => guardianProfile = updated);
-                            },
-                            onRecipientChanged: (updated) {
-                              setState(() => guardianRecipient = updated);
-                            },
+                          builder: (_) => const LoginScreen(
+                            selectedRole: AppUserRole.guardian,
                           ),
                         ),
                       );
@@ -99,7 +73,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (_) => const RecipientListScreen(),
+                          builder: (_) => const LoginScreen(
+                            selectedRole: AppUserRole.socialWorker,
+                          ),
                         ),
                       );
                     },
