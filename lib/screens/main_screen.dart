@@ -4,6 +4,7 @@ import '../data/mock_data.dart';
 import '../models/hyope_models.dart';
 import '../utils/adherence_utils.dart';
 import '../utils/date_utils.dart';
+import 'conversation_log_screen.dart';
 import 'dashboard_screen.dart';
 import 'edit_recipient_screen.dart';
 import 'edit_user_profile_screen.dart';
@@ -32,11 +33,13 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   late final List<DailyAssessment> assessments;
+  late final List<ConversationLog> conversationLogs;
   late DateTime selectedMonth;
   late UserProfile currentUser;
   late RecipientSummary currentRecipient;
   DateTime? selectedDate;
   bool showAdherenceStats = false;
+  bool isCalendarExpanded = false;
   int selectedTabIndex = 0;
 
   bool smsAlertEnabled = true;
@@ -56,6 +59,7 @@ class _MainScreenState extends State<MainScreen> {
             ? MockData.guardianProfile
             : MockData.socialWorkerProfile);
     assessments = MockData.last30Days(recipientId: currentRecipient.id);
+    conversationLogs = MockData.conversationLogs(recipientId: currentRecipient.id);
     final latestDate = dateOnly(assessments.last.measuredAt);
     selectedDate = null;
     selectedMonth = DateTime(latestDate.year, latestDate.month);
@@ -135,8 +139,12 @@ class _MainScreenState extends State<MainScreen> {
             selectedDate: selectedDate,
             selectedAssessment: selectedAssessment,
             showAdherenceStats: showAdherenceStats,
+            isCalendarExpanded: isCalendarExpanded,
             onToggleAdherenceStats: () {
               setState(() => showAdherenceStats = !showAdherenceStats);
+            },
+            onToggleCalendarExpanded: () {
+              setState(() => isCalendarExpanded = !isCalendarExpanded);
             },
             onMonthChanged: (month) {
               setState(() {
@@ -148,6 +156,7 @@ class _MainScreenState extends State<MainScreen> {
               setState(() => selectedDate = date);
             },
           ),
+          ConversationLogScreen(logs: conversationLogs),
           NotificationSettingsScreen(
             smsAlertEnabled: smsAlertEnabled,
             pushAlertEnabled: pushAlertEnabled,
@@ -189,6 +198,11 @@ class _MainScreenState extends State<MainScreen> {
             icon: Icon(Icons.dashboard_outlined),
             selectedIcon: Icon(Icons.dashboard_rounded),
             label: '대시보드',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.chat_bubble_outline_rounded),
+            selectedIcon: Icon(Icons.chat_bubble_rounded),
+            label: '대화내역',
           ),
           NavigationDestination(
             icon: Icon(Icons.notifications_none_rounded),

@@ -28,19 +28,23 @@ class RiskGaugePainter extends CustomPainter {
       const Color(0xFFF39A45),
       const Color(0xFFE75A5A),
     ];
-    final segmentSweep = totalSweep / segments.length;
 
-    for (int i = 0; i < segments.length; i++) {
+    const segmentCount = 80;
+    for (int i = 0; i < segmentCount; i++) {
+      final t0 = i / segmentCount;
+      final t1 = (i + 1) / segmentCount;
+      final midColor = _colorAt(segments, (t0 + t1) / 2);
+
       final paint = Paint()
-        ..color = segments[i]
+        ..color = midColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth
         ..strokeCap = StrokeCap.butt;
 
       canvas.drawArc(
         rect,
-        startAngle + segmentSweep * i,
-        i == segments.length - 1 ? segmentSweep : segmentSweep + 0.001,
+        startAngle + totalSweep * t0,
+        totalSweep / segmentCount * 1.05,
         false,
         paint,
       );
@@ -141,6 +145,20 @@ class RiskGaugePainter extends CustomPainter {
       Offset(center.dx + radius + 10, center.dy + 12),
       const TextStyle(fontSize: 12, color: Color(0xFF8A92A6), fontWeight: FontWeight.w700),
     );
+  }
+
+  Color _colorAt(List<Color> colors, double t) {
+
+    const stops = [0.0, 0.45, 0.7, 1.0];
+    final clamped = t.clamp(0.0, 1.0);
+
+    for (int i = 0; i < stops.length - 1; i++) {
+      if (clamped <= stops[i + 1] || i == stops.length - 2) {
+        final localT = (clamped - stops[i]) / (stops[i + 1] - stops[i]);
+        return Color.lerp(colors[i], colors[i + 1], localT.clamp(0.0, 1.0))!;
+      }
+    }
+    return colors.last;
   }
 
   void _drawText(Canvas canvas, String text, Offset center, TextStyle style) {
