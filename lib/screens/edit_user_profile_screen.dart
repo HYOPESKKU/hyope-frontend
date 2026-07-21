@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../models/hyope_models.dart';
+import '../services/api_client.dart';
+import '../services/guardian_service.dart';
 
 class EditUserProfileScreen extends StatefulWidget {
   final UserProfile profile;
@@ -17,36 +19,62 @@ class EditUserProfileScreen extends StatefulWidget {
 
 class _EditUserProfileScreenState extends State<EditUserProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _nameController;
+  late final TextEditingController _lastNameController;
+  late final TextEditingController _firstNameController;
   late final TextEditingController _phoneController;
   late final TextEditingController _emailController;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.profile.name);
+    final name = widget.profile.name.trim();
+    // 백엔드는 성/이름을 따로 받는데 프로필엔 합쳐진 이름만 있어서, 첫 글자를 성으로 임시 분리합니다.
+    // 정확하지 않으면 아래에서 직접 수정해주세요.
+    _lastNameController =
+        TextEditingController(text: name.isEmpty ? '' : name.substring(0, 1));
+    _firstNameController =
+        TextEditingController(text: name.isEmpty ? '' : name.substring(1));
     _phoneController = TextEditingController(text: widget.profile.phoneNumber);
     _emailController = TextEditingController(text: widget.profile.email);
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _lastNameController.dispose();
+    _firstNameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    Navigator.of(context).pop(
-      widget.profile.copyWith(
-        name: _nameController.text.trim(),
+    setState(() => _isSaving = true);
+    try {
+      final updated = await GuardianService().updateProfile(
+        id: widget.profile.id,
+        lastName: _lastNameController.text.trim(),
+        firstName: _firstNameController.text.trim(),
         phoneNumber: _phoneController.text.trim(),
         email: _emailController.text.trim(),
-      ),
-    );
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop(updated);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('저장에 실패했습니다. 네트워크를 확인해주세요.')),
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   @override
@@ -76,19 +104,42 @@ class _EditUserProfileScreenState extends State<EditUserProfileScreen> {
                 children: [
                   _EditSection(
                     title: '기본 정보',
-                    child: TextFormField(
-                      controller: _nameController,
-                      textInputAction: TextInputAction.next,
-                      decoration: _inputDecoration(
-                        label: '이름',
-                        icon: Icons.person_outline,
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return '이름을 입력해 주세요.';
-                        }
-                        return null;
-                      },
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _lastNameController,
+                            textInputAction: TextInputAction.next,
+                            decoration: _inputDecoration(
+                              label: '성',
+                              icon: Icons.person_outline,
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return '필수';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _firstNameController,
+                            textInputAction: TextInputAction.next,
+                            decoration: _inputDecoration(
+                              label: '이름',
+                              icon: Icons.person_outline,
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return '필수';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -141,8 +192,17 @@ class _EditUserProfileScreenState extends State<EditUserProfileScreen> {
                   ),
                   const SizedBox(height: 20),
                   FilledButton.icon(
-                    onPressed: _save,
-                    icon: const Icon(Icons.check_rounded),
+                    onPressed: _isSaving ? null : _save,
+                    icon: _isSaving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.check_rounded),
                     label: const Text('변경사항 저장'),
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(52),
