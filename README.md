@@ -96,10 +96,11 @@ Started HyopeServerApplication in ...
 백엔드가 뜬 상태에서, **새 터미널**을 열고:
 
 ```powershell
-& "C:\Program Files\MySQL\MySQL Server 9.7\bin\mysql.exe" --default-character-set=utf8mb4 -uhyope -p1234 hyope_db < src\main\resources\dummy.sql
+cd C:\Users\k\Desktop\hyope-backend
+Get-Content -Raw -Encoding UTF8 src\main\resources\dummy.sql | & "C:\Program Files\MySQL\MySQL Server 9.7\bin\mysql.exe" --default-character-set=utf8mb4 -uhyope -p1234 hyope_db
 ```
 
-`--default-character-set=utf8mb4`를 꼭 붙이세요 — 안 붙이면 Windows 콘솔 기본 문자셋(euckr) 때문에 한글 데이터가 깨져서 `Incorrect string value` 에러가 납니다.
+ `Get-Content -Encoding UTF8`와 `--default-character-set=utf8mb4` **둘 다** 있어야 합니다. 하나라도 빠지면 Windows 콘솔 기본 문자셋(euckr) 때문에 한글이 깨져서 `Incorrect string value` 에러가 나거나, 에러 없이 조용히 깨진 채로 들어갈 수 있습니다.
 
 다 넣으면 아래 계정으로 바로 로그인 테스트가 가능합니다.
 
@@ -125,10 +126,10 @@ ALTER TABLE adherence_record AUTO_INCREMENT = 1;
 ### 백엔드가 잘 떠 있는지 curl로 확인 (선택)
 
 ```powershell
-curl -X POST http://localhost:8080/auth/login -H "Content-Type: application/json" -d '{\"loginId\":\"user1\",\"password\":\"12345\"}'
+Invoke-RestMethod -Uri http://localhost:8080/auth/login -Method Post -ContentType "application/json" -Body '{"loginId":"user1","password":"12345"}'
 ```
 
-`{"token":"..."}`가 오면 정상입니다.
+`token` 필드가 오면 정상입니다. (단, 한글이 포함된 응답을 이 방식으로 확인할 땐 [트러블슈팅](#트러블슈팅)의 인코딩 관련 항목을 참고하세요 — 한글 필드는 `curl.exe`로 확인하는 게 더 정확합니다: `curl.exe -s http://localhost:8080/... -H "Authorization: Bearer <token>"`)
 
 ---
 
@@ -151,25 +152,3 @@ flutter run -d chrome
 사용 가능한 디바이스 목록은 `flutter devices`로 확인할 수 있고, `windows`가 안 보이면 `flutter config --enable-windows-desktop` 한 번 실행하세요.
 
 앱이 뜨면: 역할 선택 → 로그인 화면 → `user1`/`12345`(또는 새로 회원가입)로 로그인 → 피보호자 목록/등록/대시보드까지 확인할 수 있습니다.
-
----
-
-## 트러블슈팅
-
-| 증상 | 원인 / 해결 |
-|---|---|
-| 로그인 시 "네트워크 오류가 발생했습니다" | `lib/services/api_client.dart`의 `kApiBaseUrl`이 `http://localhost:8080`인지 확인. 다른 포트(예: 8000)로 되어 있으면 요청이 아예 백엔드에 도달 못 함. 값 고친 뒤엔 핫 리로드(`r`)가 아니라 **완전 재시작**(`R` 또는 `flutter run` 다시)이 필요할 수 있음(`const` 값이라 핫 리로드로 안 바뀔 때가 있음) |
-| 로그인은 되는데 다음 화면으로 안 넘어감 | 방금 가입한 계정은 등록된 피보호자가 0명이라 그럴 수 있음 — 지금은 `RecipientListScreen`이 빈 상태를 보여주고 "피보호자 등록" 버튼으로 바로 등록할 수 있게 되어 있음 |
-| `docker run` 시 `Ports are not available: ... 3306` | 로컬에 MySQL이 이미 서비스로 떠서 3306을 쓰고 있는 경우. `Get-Service *mysql*`로 확인하고, 있으면 Docker는 건너뛰고 그 MySQL을 그대로 쓰면 됨 |
-| `dummy.sql` 삽입 시 `Incorrect string value` | mysql 클라이언트 접속 시 `--default-character-set=utf8mb4`를 안 붙여서 발생. Windows 콘솔 기본 문자셋(euckr) 때문 |
-| `dummy.sql` 삽입 시 `Unknown column 'recipient_id'` | `assessment` 테이블은 `Recipient`가 아니라 `CallLog`에만 연결됨(스키마 변경 반영됨). 저장소에 있는 `dummy.sql`은 이미 이 문제를 고쳐뒀음 — 혹시 옛날 버전을 갖고 있다면 `assessment` INSERT에서 `recipient_id` 컬럼/값을 빼면 됨 |
-| 크롬(웹)에서 API 호출이 막힘 | 백엔드 `SecurityConfig.java`에 CORS(`http://localhost:*` 허용) 설정이 없던 버전이면 발생. 최신 코드엔 반영되어 있음 — 백엔드를 재시작했는지 확인 |
-| `dummy.sql`의 `user1` 계정으로 로그인 실패 | `password_hash`가 BCrypt 해시가 아니라 평문(`'12345'`)으로 들어간 옛날 버전일 수 있음. 최신 `dummy.sql`은 `12345`의 실제 BCrypt 해시로 되어 있음 |
-| 백엔드 컴파일 에러 (`GuardianController`) | `/guardians/me` 엔드포인트의 `Authentication` import가 `org.apache.tomcat...` 같은 엉뚱한 클래스로 잘못 잡힌 경우. `import org.springframework.security.core.Authentication;`이어야 함 |
-
----
-
-## 참고: 알려진 제약사항
-
-- `AssessmentResponse`(백엔드)에 `id` 필드가 없어서, 복약/식사 이행 기록(`adherence_record`)을 assessment별로 프론트에서 못 가져옵니다. 대시보드 캘린더의 이행 표시가 항상 "미확인"으로 나오는 게 정상입니다.
-- `GuardianService.findMyProfile`은 "내 정보 조회(me)" 전용 엔드포인트(`/guardians/me`)를 씁니다. 이미 백엔드에 반영되어 있어야 정상 동작합니다.
