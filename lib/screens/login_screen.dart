@@ -83,6 +83,11 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: const Color(0xFF182033),
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -114,6 +119,38 @@ class _LoginScreenState extends State<LoginScreen> {
                         fontSize: 28,
                         fontWeight: FontWeight.w900,
                         color: Color(0xFF182033),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4F80FF).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              widget.selectedRole == AppUserRole.guardian
+                                  ? Icons.diversity_1_rounded
+                                  : Icons.badge_outlined,
+                              size: 15,
+                              color: const Color(0xFF4F80FF),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              '${widget.selectedRole.label} 로그인',
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF4F80FF),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
