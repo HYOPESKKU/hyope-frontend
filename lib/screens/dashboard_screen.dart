@@ -14,7 +14,9 @@ class DashboardScreen extends StatelessWidget {
   final DateTime? selectedDate;
   final DailyAssessment? selectedAssessment;
   final bool showAdherenceStats;
+  final bool isCalendarExpanded;
   final VoidCallback onToggleAdherenceStats;
+  final VoidCallback onToggleCalendarExpanded;
   final ValueChanged<DateTime> onMonthChanged;
   final ValueChanged<DateTime> onDateSelected;
 
@@ -26,12 +28,15 @@ class DashboardScreen extends StatelessWidget {
     required this.selectedDate,
     required this.selectedAssessment,
     required this.showAdherenceStats,
+    required this.isCalendarExpanded,
     required this.onToggleAdherenceStats,
+    required this.onToggleCalendarExpanded,
     required this.onMonthChanged,
     required this.onDateSelected,
   });
 
-  DailyAssessment get currentAssessment => assessments.last;
+  // 선택된 날짜가 없으면 최신(오늘) 데이터를 기본으로 보여줌
+  DailyAssessment get displayedAssessment => selectedAssessment ?? assessments.last;
 
   @override
   Widget build(BuildContext context) {
@@ -40,12 +45,13 @@ class DashboardScreen extends StatelessWidget {
     final cognitiveValues = assessments.map((e) => e.cognitiveScore).toList();
     final emotionValues = assessments.map((e) => e.emotionalStability).toList();
     final physicalRiskValues = assessments.map((e) => e.healthRisk).toList();
+    final current = displayedAssessment;
 
     final metricCards = [
       MetricSummaryCard(
         title: '우울 지표',
         subtitle: '낮을수록 안정 · 7일 추이',
-        score: currentAssessment.depressionScore,
+        score: current.depressionScore,
         values: depressionValues,
         dates: metricDates,
         color: const Color(0xFF8A6DFF),
@@ -57,7 +63,7 @@ class DashboardScreen extends StatelessWidget {
       MetricSummaryCard(
         title: '인지 지표',
         subtitle: '높을수록 양호 · 7일 추이',
-        score: currentAssessment.cognitiveScore,
+        score: current.cognitiveScore,
         values: cognitiveValues,
         dates: metricDates,
         color: const Color(0xFF2FB86E),
@@ -69,7 +75,7 @@ class DashboardScreen extends StatelessWidget {
       MetricSummaryCard(
         title: '정서 지표',
         subtitle: '높을수록 안정 · 7일 추이',
-        score: currentAssessment.emotionalStability,
+        score: current.emotionalStability,
         values: emotionValues,
         dates: metricDates,
         color: const Color(0xFF6D7CFF),
@@ -81,7 +87,7 @@ class DashboardScreen extends StatelessWidget {
       MetricSummaryCard(
         title: '신체 위험 지표',
         subtitle: '낮을수록 안정 · 7일 추이',
-        score: currentAssessment.healthRisk,
+        score: current.healthRisk,
         values: physicalRiskValues,
         dates: metricDates,
         color: const Color(0xFFFF8A3D),
@@ -106,10 +112,32 @@ class DashboardScreen extends StatelessWidget {
                     children: [
                       HeaderSection(
                         recipient: recipient,
-                        latestAssessment: currentAssessment,
+                        latestAssessment: current,
                       ),
                       const SizedBox(height: 14),
-                      RiskGaugeCard(assessment: currentAssessment),
+
+                      // 접이식 캘린더
+                      _CollapsibleCalendarHeader(
+                        isExpanded: isCalendarExpanded,
+                        selectedDate: selectedDate,
+                        onTap: onToggleCalendarExpanded,
+                      ),
+                      if (isCalendarExpanded) ...[
+                        const SizedBox(height: 8),
+                        AdherenceCalendarCard(
+                          selectedMonth: selectedMonth,
+                          selectedDate: selectedDate,
+                          selectedAssessment: selectedAssessment,
+                          assessments: assessments,
+                          showStats: showAdherenceStats,
+                          onToggleStats: onToggleAdherenceStats,
+                          onMonthChanged: onMonthChanged,
+                          onDateSelected: onDateSelected,
+                        ),
+                      ],
+                      const SizedBox(height: 14),
+
+                      RiskGaugeCard(assessment: current),
                       const SizedBox(height: 14),
                       const SectionTitle(title: '영역별 건강 지표'),
                       const SizedBox(height: 10),
@@ -142,17 +170,6 @@ class DashboardScreen extends StatelessWidget {
                           );
                         },
                       ),
-                      const SizedBox(height: 10),
-                      AdherenceCalendarCard(
-                        selectedMonth: selectedMonth,
-                        selectedDate: selectedDate,
-                        selectedAssessment: selectedAssessment,
-                        assessments: assessments,
-                        showStats: showAdherenceStats,
-                        onToggleStats: onToggleAdherenceStats,
-                        onMonthChanged: onMonthChanged,
-                        onDateSelected: onDateSelected,
-                      ),
                       const SizedBox(height: 14),
                     ],
                   ),
@@ -161,6 +178,50 @@ class DashboardScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CollapsibleCalendarHeader extends StatelessWidget {
+  final bool isExpanded;
+  final DateTime? selectedDate;
+  final VoidCallback onTap;
+
+  const _CollapsibleCalendarHeader({
+    required this.isExpanded,
+    required this.selectedDate,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final label = selectedDate == null
+        ? '오늘'
+        : '${selectedDate!.month}월 ${selectedDate!.day}일';
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE7EAF2)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.calendar_month_outlined, color: Color(0xFF4F80FF)),
+            const SizedBox(width: 10),
+            Text(
+              '$label 기록 · 캘린더로 다른 날짜 보기',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const Spacer(),
+            Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
+          ],
+        ),
       ),
     );
   }

@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../data/mock_data.dart';
 import '../models/hyope_models.dart';
+import '../services/api_client.dart';
+import '../services/assessment_service.dart';
 import '../utils/adherence_utils.dart';
 import '../utils/date_utils.dart';
+import 'conversation_log_screen.dart';
 import 'dashboard_screen.dart';
 import 'edit_recipient_screen.dart';
 import 'edit_user_profile_screen.dart';
@@ -31,12 +34,15 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  late final List<DailyAssessment> assessments;
+  List<DailyAssessment>? assessments;
+  String? loadError;
+  late final List<ConversationLog> conversationLogs;
   late DateTime selectedMonth;
   late UserProfile currentUser;
   late RecipientSummary currentRecipient;
   DateTime? selectedDate;
   bool showAdherenceStats = false;
+  bool isCalendarExpanded = false;
   int selectedTabIndex = 0;
 
   bool smsAlertEnabled = true;
@@ -52,19 +58,46 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
     currentRecipient = widget.recipient;
     currentUser = widget.userProfile ??
-        (widget.userRole == AppUserRole.guardian
-            ? MockData.guardianProfile
-            : MockData.socialWorkerProfile);
-    assessments = MockData.last30Days(recipientId: currentRecipient.id);
-    final latestDate = dateOnly(assessments.last.measuredAt);
-    selectedDate = null;
-    selectedMonth = DateTime(latestDate.year, latestDate.month);
+        UserProfile(
+          id: 0,
+          role: widget.userRole,
+          name: currentRecipient.name,
+          phoneNumber: currentRecipient.phoneNumber,
+          email: '',
+        );
+    // 대화내역은 아직 서버 API가 없어서 당분간 Mock 데이터를 사용합니다.
+    conversationLogs = MockData.conversationLogs(recipientId: currentRecipient.id);
+    _loadAssessments();
+  }
+
+  Future<void> _loadAssessments() async {
+    setState(() => loadError = null);
+    try {
+      final result =
+          await AssessmentService().findByRecipient(currentRecipient.id);
+      if (!mounted) return;
+      setState(() {
+        assessments = result;
+        if (result.isNotEmpty) {
+          final latestDate = dateOnly(result.last.measuredAt);
+          selectedMonth = DateTime(latestDate.year, latestDate.month);
+        }
+        selectedDate = null;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => loadError = e.message);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => loadError = '데이터를 불러오지 못했습니다.');
+    }
   }
 
   DailyAssessment? get selectedAssessment {
     final date = selectedDate;
-    if (date == null) return null;
-    return findAssessmentByDate(assessments, date);
+    final list = assessments;
+    if (date == null || list == null) return null;
+    return findAssessmentByDate(list, date);
   }
 
   Future<void> _editUserProfile() async {
@@ -113,30 +146,73 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final isSocialWorker = widget.userRole == AppUserRole.socialWorker;
+    final appBar = isSocialWorker
+        ? AppBar(
+            backgroundColor: const Color(0xFFF5F7FB),
+            surfaceTintColor: Colors.transparent,
+            title: Text(
+              '${currentRecipient.name} 대시보드',
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+          )
+        : null;
+
+    final list = assessments;
+
+    if (loadError != null) {
+      return Scaffold(
+        appBar: appBar,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(loadError!, textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: _loadAssessments,
+                  child: const Text('다시 시도'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (list == null) {
+      return Scaffold(
+        appBar: appBar,
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (list.isEmpty) {
+      return Scaffold(
+        appBar: appBar,
+        body: const Center(child: Text('아직 분석 데이터가 없습니다.')),
+      );
+    }
 
     return Scaffold(
-      appBar: isSocialWorker
-          ? AppBar(
-              backgroundColor: const Color(0xFFF5F7FB),
-              surfaceTintColor: Colors.transparent,
-              title: Text(
-                '${currentRecipient.name} 대시보드',
-                style: const TextStyle(fontWeight: FontWeight.w800),
-              ),
-            )
-          : null,
+      appBar: appBar,
       body: IndexedStack(
         index: selectedTabIndex,
         children: [
           DashboardScreen(
             recipient: currentRecipient,
-            assessments: assessments,
+            assessments: list,
             selectedMonth: selectedMonth,
             selectedDate: selectedDate,
             selectedAssessment: selectedAssessment,
             showAdherenceStats: showAdherenceStats,
+            isCalendarExpanded: isCalendarExpanded,
             onToggleAdherenceStats: () {
               setState(() => showAdherenceStats = !showAdherenceStats);
+            },
+            onToggleCalendarExpanded: () {
+              setState(() => isCalendarExpanded = !isCalendarExpanded);
             },
             onMonthChanged: (month) {
               setState(() {
@@ -148,6 +224,7 @@ class _MainScreenState extends State<MainScreen> {
               setState(() => selectedDate = date);
             },
           ),
+          ConversationLogScreen(logs: conversationLogs),
           NotificationSettingsScreen(
             smsAlertEnabled: smsAlertEnabled,
             pushAlertEnabled: pushAlertEnabled,
@@ -189,6 +266,11 @@ class _MainScreenState extends State<MainScreen> {
             icon: Icon(Icons.dashboard_outlined),
             selectedIcon: Icon(Icons.dashboard_rounded),
             label: '대시보드',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.chat_bubble_outline_rounded),
+            selectedIcon: Icon(Icons.chat_bubble_rounded),
+            label: '대화내역',
           ),
           NavigationDestination(
             icon: Icon(Icons.notifications_none_rounded),

@@ -418,3 +418,35 @@ Slot parseSlot(String value) {
       return Slot.breakfast;
   }
 }
+
+class ConversationMessage {
+  final String speaker; // 'ai' 또는 'recipient'
+  final String content;
+  final DateTime sentAt;
+
+  const ConversationMessage({
+    required this.speaker,
+    required this.content,
+    required this.sentAt,
+  });
+}
+
+class ConversationLog {
+  final int id;
+  final int recipientId;
+  final int callLogId;
+  final DateTime calledAt;
+  final Duration duration;
+  final String summary; // 한 줄 요약
+  final List<ConversationMessage> messages;
+
+  const ConversationLog({
+    required this.id,
+    required this.recipientId,
+    required this.callLogId,
+    required this.calledAt,
+    required this.duration,
+    required this.summary,
+    required this.messages,
+  });
+}
