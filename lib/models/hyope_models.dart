@@ -227,6 +227,7 @@ class DailyAssessment {
   final double cognitiveScore;
   final double overallRisk;
   final RiskLevel riskLevel;
+  final String summary;
   final String recommendation;
   final List<AdherenceRecord> adherenceRecords;
 
@@ -241,6 +242,7 @@ class DailyAssessment {
     required this.cognitiveScore,
     required this.overallRisk,
     required this.riskLevel,
+    required this.summary,
     required this.recommendation,
     required this.adherenceRecords,
   });
@@ -258,6 +260,7 @@ class DailyAssessment {
       cognitiveScore: _toDouble(json['cognitiveScore']),
       overallRisk: _toDouble(json['overallRisk']),
       riskLevel: parseRiskLevel(json['riskLevel'] as String? ?? 'OBSERVE'),
+      summary: json['summary'] as String? ?? '',
       recommendation: json['recommendation'] as String? ?? '',
       adherenceRecords: const [],
     );
@@ -419,34 +422,90 @@ Slot parseSlot(String value) {
   }
 }
 
-class ConversationMessage {
-  final String speaker; // 'ai' 또는 'recipient'
-  final String content;
-  final DateTime sentAt;
+enum CallStatus { analyzing, completed, failed, missed }
 
-  const ConversationMessage({
-    required this.speaker,
-    required this.content,
-    required this.sentAt,
-  });
+extension CallStatusView on CallStatus {
+  String get label {
+    switch (this) {
+      case CallStatus.analyzing:
+        return '분석중';
+      case CallStatus.completed:
+        return '완료';
+      case CallStatus.failed:
+        return '실패';
+      case CallStatus.missed:
+        return '부재중';
+    }
+  }
+}
+
+CallStatus parseCallStatus(String value) {
+  switch (value.toUpperCase()) {
+    case 'COMPLETED':
+      return CallStatus.completed;
+    case 'FAILED':
+      return CallStatus.failed;
+    case 'MISSED':
+      return CallStatus.missed;
+    case 'ANALYZING':
+    default:
+      return CallStatus.analyzing;
+  }
 }
 
 class ConversationLog {
   final int id;
   final int recipientId;
-  final int callLogId;
-  final DateTime calledAt;
-  final Duration duration;
-  final String summary; // 한 줄 요약
-  final List<ConversationMessage> messages;
+  final DateTime startedAt;
+  final DateTime? endedAt;
+  final int durationSec;
+  final CallStatus status;
 
   const ConversationLog({
     required this.id,
     required this.recipientId,
-    required this.callLogId,
-    required this.calledAt,
-    required this.duration,
-    required this.summary,
-    required this.messages,
+    required this.startedAt,
+    required this.endedAt,
+    required this.durationSec,
+    required this.status,
   });
+
+  factory ConversationLog.fromJson(Map<String, dynamic> json) {
+    return ConversationLog(
+      id: _toInt(json['id']),
+      recipientId: _toInt(json['recipient_id'] ?? json['recipientId']),
+      startedAt: DateTime.parse(json['startedAt'] as String),
+      endedAt: json['endedAt'] == null
+          ? null
+          : DateTime.parse(json['endedAt'] as String),
+      durationSec: _toInt(json['durationSec']),
+      status: parseCallStatus(json['status'] as String? ?? 'ANALYZING'),
+    );
+  }
+}
+
+class ConversationMessage {
+  final int callLogId;
+  final int sequence;
+  final String question;
+  final String answer;
+  final DateTime askedAt;
+
+  const ConversationMessage({
+    required this.callLogId,
+    required this.sequence,
+    required this.question,
+    required this.answer,
+    required this.askedAt,
+  });
+
+  factory ConversationMessage.fromJson(Map<String, dynamic> json) {
+    return ConversationMessage(
+      callLogId: _toInt(json['call_log_id'] ?? json['callLogId']),
+      sequence: _toInt(json['sequence']),
+      question: json['question'] as String? ?? '',
+      answer: json['answer'] as String? ?? '',
+      askedAt: DateTime.parse(json['askedAt'] as String),
+    );
+  }
 }

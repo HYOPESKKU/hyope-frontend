@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../data/mock_data.dart';
 import '../models/hyope_models.dart';
 import '../services/api_client.dart';
 import '../services/assessment_service.dart';
@@ -36,7 +35,6 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   List<DailyAssessment>? assessments;
   String? loadError;
-  late final List<ConversationLog> conversationLogs;
   late DateTime selectedMonth;
   late UserProfile currentUser;
   late RecipientSummary currentRecipient;
@@ -65,8 +63,6 @@ class _MainScreenState extends State<MainScreen> {
           phoneNumber: currentRecipient.phoneNumber,
           email: '',
         );
-    // 대화내역은 아직 서버 API가 없어서 당분간 Mock 데이터를 사용합니다.
-    conversationLogs = MockData.conversationLogs(recipientId: currentRecipient.id);
     _loadAssessments();
   }
 
@@ -224,7 +220,7 @@ class _MainScreenState extends State<MainScreen> {
               setState(() => selectedDate = date);
             },
           ),
-          ConversationLogScreen(logs: conversationLogs),
+          ConversationLogScreen(recipientId: currentRecipient.id),
           NotificationSettingsScreen(
             smsAlertEnabled: smsAlertEnabled,
             pushAlertEnabled: pushAlertEnabled,

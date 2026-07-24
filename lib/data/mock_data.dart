@@ -121,6 +121,9 @@ class MockData {
           cognitiveScore: cognitive,
           overallRisk: overallRisk,
           riskLevel: risk,
+          summary: risk == RiskLevel.observe
+              ? '전반적으로 안정적인 상태로 특이사항은 없었습니다.'
+              : '평소보다 기운이 없어 보이셨고, 식사 여부를 확인했습니다.',
           recommendation: risk.actionDescription,
           adherenceRecords: _adherenceRecords(
             assessmentId,
@@ -190,46 +193,5 @@ class MockData {
         isDone: index % 5 != 0,
       ),
     ];
-  }
-
-  static List<ConversationLog> conversationLogs({int recipientId = 1}) {
-    final assessments = last30Days(recipientId: recipientId);
-    return assessments.map((assessment) {
-      final isLowMood = assessment.depressionScore >= 5;
-      final summary = isLowMood
-          ? '평소보다 기운이 없어 보이셨고, 식사 여부를 확인했습니다.'
-          : '전반적으로 안정적인 상태로 특이사항은 없었습니다.';
-
-      return ConversationLog(
-        id: assessment.callLogId,
-        recipientId: recipientId,
-        callLogId: assessment.callLogId,
-        calledAt: assessment.measuredAt,
-        duration: const Duration(minutes: 4, seconds: 32),
-        summary: summary,
-        messages: [
-          ConversationMessage(
-            speaker: 'ai',
-            content: '안녕하세요, 오늘 컨디션은 어떠세요?',
-            sentAt: assessment.measuredAt,
-          ),
-          ConversationMessage(
-            speaker: 'recipient',
-            content: isLowMood ? '오늘은 좀 기운이 없네요.' : '오늘은 괜찮아요.',
-            sentAt: assessment.measuredAt.add(const Duration(seconds: 8)),
-          ),
-          ConversationMessage(
-            speaker: 'ai',
-            content: '식사는 하셨어요? 불편한 곳은 없으신가요?',
-            sentAt: assessment.measuredAt.add(const Duration(seconds: 20)),
-          ),
-          ConversationMessage(
-            speaker: 'recipient',
-            content: isLowMood ? '입맛이 없어서 조금만 먹었어요.' : '네, 잘 챙겨 먹었어요.',
-            sentAt: assessment.measuredAt.add(const Duration(seconds: 30)),
-          ),
-        ],
-      );
-    }).toList();
   }
 }

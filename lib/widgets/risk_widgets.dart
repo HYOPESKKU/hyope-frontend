@@ -6,8 +6,13 @@ import 'common_widgets.dart';
 
 class RiskGaugeCard extends StatelessWidget {
   final DailyAssessment assessment;
+  final String title;
 
-  const RiskGaugeCard({super.key, required this.assessment});
+  const RiskGaugeCard({
+    super.key,
+    required this.assessment,
+    this.title = '오늘의 돌봄 위험도',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +22,7 @@ class RiskGaugeCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionTitle(title: '오늘의 돌봄 위험도'),
+          SectionTitle(title: title),
           const SizedBox(height: 6),
           SizedBox(
             height: 188,

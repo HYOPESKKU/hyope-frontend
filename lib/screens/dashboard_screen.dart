@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'report_screen.dart';
 
 import '../models/hyope_models.dart';
 import '../widgets/adherence_widgets.dart';
@@ -37,6 +38,12 @@ class DashboardScreen extends StatelessWidget {
 
   // 선택된 날짜가 없으면 최신(오늘) 데이터를 기본으로 보여줌
   DailyAssessment get displayedAssessment => selectedAssessment ?? assessments.last;
+
+  String get _riskTitle {
+    final date = selectedDate;
+    if (date == null) return '오늘의 돌봄 위험도';
+    return '${date.year}년 ${date.month}월 ${date.day}일의 돌봄 위험도';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +129,7 @@ class DashboardScreen extends StatelessWidget {
                         selectedDate: selectedDate,
                         onTap: onToggleCalendarExpanded,
                       ),
-                      if (isCalendarExpanded) ...[
+                     if (isCalendarExpanded) ...[
                         const SizedBox(height: 8),
                         AdherenceCalendarCard(
                           selectedMonth: selectedMonth,
@@ -135,9 +142,34 @@ class DashboardScreen extends StatelessWidget {
                           onDateSelected: onDateSelected,
                         ),
                       ],
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => ReportScreen(
+                                  recipient: recipient,
+                                  assessments: assessments,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.summarize_rounded, size: 19),
+                          label: const Text('주간 · 월간 리포트 보기'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFF4F80FF),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 14),
 
-                      RiskGaugeCard(assessment: current),
+                      RiskGaugeCard(assessment: current, title: _riskTitle),
                       const SizedBox(height: 14),
                       const SectionTitle(title: '영역별 건강 지표'),
                       const SizedBox(height: 10),

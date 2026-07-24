@@ -370,3 +370,159 @@ class LineChartPainter extends CustomPainter {
     return oldDelegate.values != values || oldDelegate.color != color;
   }
 }
+
+class AxisLineChartPainter extends CustomPainter {
+  final List<double> values;
+  final List<String> xLabels;
+  final Color color;
+
+  AxisLineChartPainter({
+    required this.values,
+    required this.xLabels,
+    required this.color,
+  });
+
+  // 데이터 범위에 맞춰 y축 최소/최대값을 0.5 단위로 계산 (여유값 포함)
+  (double, double) get _yRange {
+    final minValue = values.reduce((a, b) => a < b ? a : b);
+    final maxValue = values.reduce((a, b) => a > b ? a : b);
+
+    double yMin = (((minValue - 0.7) / 0.5).floor() * 0.5);
+    double yMax = (((maxValue + 0.7) / 0.5).ceil() * 0.5);
+
+    yMin = yMin.clamp(0.0, 10.0);
+    yMax = yMax.clamp(0.0, 10.0);
+
+    // 최소 폭 2.0은 보장 (데이터가 거의 평평할 때 그래프가 너무 납작해지는 것 방지)
+    if (yMax - yMin < 2.0) {
+      final mid = (yMin + yMax) / 2;
+      yMin = (mid - 1.0).clamp(0.0, 10.0);
+      yMax = (mid + 1.0).clamp(0.0, 10.0);
+    }
+
+    return (yMin, yMax);
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.length < 2) return;
+
+    const leftAxisWidth = 28.0;
+    const bottomAxisHeight = 22.0;
+    final chartLeft = leftAxisWidth;
+    final chartRight = size.width;
+    final chartTop = 6.0;
+    final chartBottom = size.height - bottomAxisHeight;
+
+    final (yMin, yMax) = _yRange;
+    const yStep = 0.5;
+    final ySteps = ((yMax - yMin) / yStep).round();
+
+    final gridPaint = Paint()
+      ..color = const Color(0xFFEFF1F6)
+      ..strokeWidth = 1;
+    const axisTextStyle = TextStyle(
+      fontSize: 9,
+      color: Color(0xFF9AA2B4),
+      fontWeight: FontWeight.w600,
+    );
+
+    // y축 그리드 + 라벨 (0.5 단위 전체 표시)
+    for (int i = 0; i <= ySteps; i++) {
+      final value = yMin + i * yStep;
+      final normalized = (value - yMin) / (yMax - yMin);
+      final y = chartBottom - normalized * (chartBottom - chartTop);
+
+      canvas.drawLine(Offset(chartLeft, y), Offset(chartRight, y), gridPaint);
+
+      _drawText(
+        canvas,
+        value % 1 == 0 ? value.toStringAsFixed(0) : value.toStringAsFixed(1),
+        Offset(chartLeft - 8, y),
+        axisTextStyle,
+        alignRight: true,
+      );
+    }
+
+    // x축 라벨
+    for (int i = 0; i < xLabels.length; i++) {
+      if (xLabels[i].isEmpty) continue;
+      final x = chartLeft + (chartRight - chartLeft) * i / (values.length - 1);
+      _drawText(
+        canvas,
+        xLabels[i],
+        Offset(x, chartBottom + 12),
+        axisTextStyle,
+      );
+    }
+
+    // 라인
+    final path = Path();
+    final points = <Offset>[];
+    for (int i = 0; i < values.length; i++) {
+      final x = chartLeft + (chartRight - chartLeft) * i / (values.length - 1);
+      final normalized = ((values[i] - yMin) / (yMax - yMin)).clamp(0.0, 1.0);
+      final y = chartBottom - normalized * (chartBottom - chartTop);
+      points.add(Offset(x, y));
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+
+    final fillPath = Path.from(path)
+      ..lineTo(points.last.dx, chartBottom)
+      ..lineTo(points.first.dx, chartBottom)
+      ..close();
+    canvas.drawPath(
+      fillPath,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [color.withOpacity(0.16), color.withOpacity(0.0)],
+        ).createShader(Rect.fromLTWH(chartLeft, chartTop, chartRight - chartLeft, chartBottom - chartTop)),
+    );
+
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.4
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+
+    for (final p in points) {
+      canvas.drawCircle(p, 2.6, Paint()..color = color);
+    }
+  }
+
+  void _drawText(
+    Canvas canvas,
+    String text,
+    Offset anchor,
+    TextStyle style, {
+    bool alignRight = false,
+  }) {
+    final tp = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    final offset = alignRight
+        ? Offset(anchor.dx - tp.width, anchor.dy - tp.height / 2)
+        : Offset(anchor.dx - tp.width / 2, anchor.dy - tp.height / 2);
+    tp.paint(canvas, offset);
+  }
+
+  @override
+  bool shouldRepaint(covariant AxisLineChartPainter oldDelegate) {
+    return oldDelegate.values != values ||
+        oldDelegate.xLabels != xLabels ||
+        oldDelegate.color != color;
+  }
+}

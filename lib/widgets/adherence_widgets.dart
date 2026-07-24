@@ -507,7 +507,7 @@ class SelectedDateAdherenceSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionTitle(title: '${formatDate(date)} 이행 상세'),
+        SectionTitle(title: '${date.year}년 ${date.month}월 ${date.day}일 이행 상세'),
         const SizedBox(height: 14),
         if (assessment == null)
           const Text(
