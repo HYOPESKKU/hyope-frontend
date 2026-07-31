@@ -13,6 +13,7 @@ class UserSettingsScreen extends StatelessWidget {
   final VoidCallback onEditRecipient;
   final ValueChanged<bool> onBiometricLockChanged;
   final ValueChanged<bool> onDarkModeChanged;
+  final VoidCallback onLogout;
 
   const UserSettingsScreen({
     super.key,
@@ -25,6 +26,7 @@ class UserSettingsScreen extends StatelessWidget {
     required this.onEditRecipient,
     required this.onBiometricLockChanged,
     required this.onDarkModeChanged,
+    required this.onLogout,
   });
 
   @override
@@ -155,6 +157,26 @@ class UserSettingsScreen extends StatelessWidget {
                       onChanged: onDarkModeChanged,
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 50,
+                child: OutlinedButton.icon(
+                  onPressed: onLogout,
+                  icon: const Icon(Icons.logout_rounded),
+                  label: const Text('로그아웃'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFE5484D),
+                    side: const BorderSide(color: Color(0xFFE5484D)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ),
               ),
             ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'report_screen.dart';
 
 import '../models/hyope_models.dart';
+import '../utils/date_utils.dart';
 import '../widgets/adherence_widgets.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/header_section.dart';
@@ -39,9 +40,17 @@ class DashboardScreen extends StatelessWidget {
   // 선택된 날짜가 없으면 최신(오늘) 데이터를 기본으로 보여줌
   DailyAssessment get displayedAssessment => selectedAssessment ?? assessments.last;
 
+  DateTime get latestAssessmentDate {
+    return assessments
+        .map((assessment) => dateOnly(assessment.measuredAt))
+        .reduce((latest, date) => date.isAfter(latest) ? date : latest);
+  }
+
   String get _riskTitle {
     final date = selectedDate;
-    if (date == null) return '오늘의 돌봄 위험도';
+    if (date == null || isSameDay(date, latestAssessmentDate)) {
+      return '오늘의 돌봄 위험도';
+    }
     return '${date.year}년 ${date.month}월 ${date.day}일의 돌봄 위험도';
   }
 
@@ -127,6 +136,7 @@ class DashboardScreen extends StatelessWidget {
                       _CollapsibleCalendarHeader(
                         isExpanded: isCalendarExpanded,
                         selectedDate: selectedDate,
+                        latestAssessmentDate: latestAssessmentDate,
                         onTap: onToggleCalendarExpanded,
                       ),
                      if (isCalendarExpanded) ...[
@@ -218,17 +228,21 @@ class DashboardScreen extends StatelessWidget {
 class _CollapsibleCalendarHeader extends StatelessWidget {
   final bool isExpanded;
   final DateTime? selectedDate;
+  final DateTime latestAssessmentDate;
   final VoidCallback onTap;
 
   const _CollapsibleCalendarHeader({
     required this.isExpanded,
     required this.selectedDate,
+    required this.latestAssessmentDate,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final label = selectedDate == null
+    final isLatestDate = selectedDate == null ||
+        isSameDay(selectedDate!, latestAssessmentDate);
+    final label = isLatestDate
         ? '오늘'
         : '${selectedDate!.month}월 ${selectedDate!.day}일';
 

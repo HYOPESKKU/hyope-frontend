@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/hyope_models.dart';
 import '../services/api_client.dart';
 import '../services/assessment_service.dart';
+import '../services/auth_service.dart';
 import '../utils/adherence_utils.dart';
 import '../utils/date_utils.dart';
 import 'conversation_log_screen.dart';
@@ -10,6 +11,7 @@ import 'dashboard_screen.dart';
 import 'edit_recipient_screen.dart';
 import 'edit_user_profile_screen.dart';
 import 'notification_settings_screen.dart';
+import 'role_selection_screen.dart';
 import 'user_settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -139,6 +141,39 @@ class _MainScreenState extends State<MainScreen> {
       );
   }
 
+  Future<void> _logout() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('로그아웃'),
+        content: const Text('현재 계정에서 로그아웃하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFE5484D),
+            ),
+            child: const Text('로그아웃'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout != true || !mounted) return;
+
+    AuthService().logout();
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(
+        builder: (_) => const RoleSelectionScreen(),
+      ),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isSocialWorker = widget.userRole == AppUserRole.socialWorker;
@@ -211,10 +246,9 @@ class _MainScreenState extends State<MainScreen> {
               setState(() => isCalendarExpanded = !isCalendarExpanded);
             },
             onMonthChanged: (month) {
-              setState(() {
-                selectedMonth = month;
-                selectedDate = null;
-              });
+              // 달 이동은 캘린더에 표시되는 월만 변경합니다.
+              // 상세 기록은 사용자가 다른 날짜를 직접 선택할 때까지 유지합니다.
+              setState(() => selectedMonth = month);
             },
             onDateSelected: (date) {
               setState(() => selectedDate = date);
@@ -249,6 +283,7 @@ class _MainScreenState extends State<MainScreen> {
             onDarkModeChanged: (value) {
               setState(() => darkModeEnabled = value);
             },
+            onLogout: _logout,
           ),
         ],
       ),

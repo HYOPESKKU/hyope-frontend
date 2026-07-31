@@ -23,20 +23,94 @@ class ReportScreen extends StatefulWidget {
 class _ReportScreenState extends State<ReportScreen> {
   ReportPeriod period = ReportPeriod.weekly;
 
-  List<DailyAssessment> get _filtered {
-    if (widget.assessments.isEmpty) return [];
+  // 0은 가장 최근 기간, 1부터는 이전 기간을 의미합니다.
+  int periodOffset = 0;
+
+  List<DailyAssessment> get _sortedAssessments {
     final sorted = [...widget.assessments]
       ..sort((a, b) => a.measuredAt.compareTo(b.measuredAt));
-    final latest = sorted.last.measuredAt;
-    final days = period == ReportPeriod.weekly ? 7 : 30;
-    final cutoff = DateTime(latest.year, latest.month, latest.day)
-        .subtract(Duration(days: days - 1));
-    return sorted.where((a) => !a.measuredAt.isBefore(cutoff)).toList();
+    return sorted;
   }
 
-  double _avg(List<double> values) {
-    if (values.isEmpty) return 0;
-    return values.reduce((a, b) => a + b) / values.length;
+  int get _periodDays => period == ReportPeriod.weekly ? 7 : 30;
+
+  DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
+
+  DateTime? get _periodEnd {
+    final sorted = _sortedAssessments;
+    if (sorted.isEmpty) return null;
+    final latest = _dateOnly(sorted.last.measuredAt);
+    return latest.subtract(Duration(days: periodOffset * _periodDays));
+  }
+
+  DateTime? get _periodStart {
+    final end = _periodEnd;
+    if (end == null) return null;
+    return end.subtract(Duration(days: _periodDays - 1));
+  }
+
+  int get _maxPeriodOffset {
+    final sorted = _sortedAssessments;
+    if (sorted.isEmpty) return 0;
+    final earliest = _dateOnly(sorted.first.measuredAt);
+    final latest = _dateOnly(sorted.last.measuredAt);
+    return latest.difference(earliest).inDays ~/ _periodDays;
+  }
+
+  // 가장 오래된 기록보다 한 기간 앞까지 이동할 수 있게 하여,
+  // 데이터가 없는 경우에도 빈 기간 안내를 확인할 수 있습니다.
+  bool get _canGoOlder =>
+      _sortedAssessments.isNotEmpty && periodOffset <= _maxPeriodOffset;
+  bool get _canGoNewer => periodOffset > 0;
+
+  List<DailyAssessment> get _filtered {
+    final start = _periodStart;
+    final end = _periodEnd;
+    if (start == null || end == null) return [];
+
+    return _sortedAssessments.where((assessment) {
+      final date = _dateOnly(assessment.measuredAt);
+      return !date.isBefore(start) && !date.isAfter(end);
+    }).toList();
+  }
+
+  String get _rangeLabel {
+    final start = _periodStart;
+    final end = _periodEnd;
+    if (start == null || end == null) return '조회 기간 없음';
+
+    if (start.year == end.year) {
+      return '${start.year}년 ${start.month}월 ${start.day}일 - '
+          '${end.month}월 ${end.day}일';
+    }
+    return '${start.year}년 ${start.month}월 ${start.day}일 - '
+        '${end.year}년 ${end.month}월 ${end.day}일';
+  }
+
+  String get _relativePeriodLabel {
+    if (periodOffset == 0) {
+      return period == ReportPeriod.weekly ? '최근 7일' : '최근 30일';
+    }
+    return period == ReportPeriod.weekly
+        ? '$periodOffset주 전'
+        : '$periodOffset개월 전';
+  }
+
+  void _changePeriod(ReportPeriod nextPeriod) {
+    setState(() {
+      period = nextPeriod;
+      periodOffset = 0;
+    });
+  }
+
+  void _showOlderPeriod() {
+    if (!_canGoOlder) return;
+    setState(() => periodOffset++);
+  }
+
+  void _showNewerPeriod() {
+    if (!_canGoNewer) return;
+    setState(() => periodOffset--);
   }
 
   @override
@@ -59,13 +133,33 @@ class _ReportScreenState extends State<ReportScreen> {
               children: [
                 _PeriodToggle(
                   period: period,
-                  onChanged: (p) => setState(() => period = p),
+                  onChanged: _changePeriod,
+                ),
+                const SizedBox(height: 12),
+                _PeriodNavigator(
+                  rangeLabel: _rangeLabel,
+                  relativeLabel: _relativePeriodLabel,
+                  canGoOlder: _canGoOlder,
+                  canGoNewer: _canGoNewer,
+                  onOlder: _showOlderPeriod,
+                  onNewer: _showNewerPeriod,
                 ),
                 const SizedBox(height: 16),
                 if (data.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 60),
-                    child: Center(child: Text('해당 기간의 분석 기록이 없습니다.')),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 60),
+                    child: Center(
+                      child: Text(
+                        periodOffset > 0
+                            ? '이전 기간의 분석 기록이 없습니다.'
+                            : '해당 기간의 분석 기록이 없습니다.',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Color(0xFF8A92A6),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
                   )
                 else ...[
                   _AverageScoresCard(data: data),
@@ -82,6 +176,74 @@ class _ReportScreenState extends State<ReportScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _PeriodNavigator extends StatelessWidget {
+  final String rangeLabel;
+  final String relativeLabel;
+  final bool canGoOlder;
+  final bool canGoNewer;
+  final VoidCallback onOlder;
+  final VoidCallback onNewer;
+
+  const _PeriodNavigator({
+    required this.rangeLabel,
+    required this.relativeLabel,
+    required this.canGoOlder,
+    required this.canGoNewer,
+    required this.onOlder,
+    required this.onNewer,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE7EAF2)),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: canGoOlder ? onOlder : null,
+            tooltip: '이전 기간 보기',
+            icon: const Icon(Icons.chevron_left_rounded),
+          ),
+          Expanded(
+            child: Column(
+              children: [
+                Text(
+                  relativeLabel,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF4F80FF),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  rangeLabel,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF687085),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: canGoNewer ? onNewer : null,
+            tooltip: '다음 기간 보기',
+            icon: const Icon(Icons.chevron_right_rounded),
+          ),
+        ],
       ),
     );
   }

@@ -247,8 +247,19 @@ class DailyAssessment {
     required this.adherenceRecords,
   });
 
-  // 백엔드 연결 시 사용 가능.
   factory DailyAssessment.fromJson(Map<String, dynamic> json) {
+    final rawAdherenceRecords = json['adherenceRecords'];
+    final adherenceRecords = rawAdherenceRecords is List
+        ? rawAdherenceRecords
+            .whereType<Map>()
+            .map(
+              (record) => AdherenceRecord.fromJson(
+                Map<String, dynamic>.from(record),
+              ),
+            )
+            .toList()
+        : <AdherenceRecord>[];
+
     return DailyAssessment(
       id: _toInt(json['id'] ?? json['assessment_id'] ?? 0),
       recipientId: _toInt(json['recipient_id'] ?? json['recipientId'] ?? 0),
@@ -262,7 +273,7 @@ class DailyAssessment {
       riskLevel: parseRiskLevel(json['riskLevel'] as String? ?? 'OBSERVE'),
       summary: json['summary'] as String? ?? '',
       recommendation: json['recommendation'] as String? ?? '',
-      adherenceRecords: const [],
+      adherenceRecords: adherenceRecords,
     );
   }
 }
@@ -290,8 +301,14 @@ class AdherenceRecord {
       assessmentId: _toInt(json['assessment_id'] ?? json['assessmentId']),
       adherenceType: parseAdherenceType(json['adherenceType'] as String? ?? 'MEAL'),
       slot: parseSlot(json['slot'] as String? ?? 'BREAKFAST'),
-      isNeeded: json['isNeeded'] as bool? ?? false,
-      isDone: json['isDone'] as bool? ?? false,
+      // Jackson/Lombok 조합에 따라 needed/done 또는 isNeeded/isDone으로
+      // 내려올 수 있으므로 두 형태를 모두 처리한다.
+      isNeeded: _toBool(
+        json['isNeeded'] ?? json['needed'] ?? json['is_needed'],
+      ),
+      isDone: _toBool(
+        json['isDone'] ?? json['done'] ?? json['is_done'],
+      ),
     );
   }
 }
@@ -381,6 +398,14 @@ double _toDouble(dynamic value) {
   if (value is double) return value;
   if (value is num) return value.toDouble();
   return double.tryParse(value?.toString() ?? '') ?? 0.0;
+}
+
+bool _toBool(dynamic value) {
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+
+  final normalized = value?.toString().trim().toLowerCase();
+  return normalized == 'true' || normalized == '1';
 }
 
 RiskLevel parseRiskLevel(String value) {

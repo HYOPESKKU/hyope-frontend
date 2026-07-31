@@ -35,6 +35,15 @@ class AdherenceCalendarCard extends StatelessWidget {
     final totalCells = leadingEmptyCells + daysInMonth;
     final rowCount = (totalCells / 7).ceil();
     final stats = calculateMonthlyAdherenceStats(assessments, selectedMonth);
+    final latestAssessmentDate = assessments
+        .map((assessment) => dateOnly(assessment.measuredAt))
+        .reduce((latest, date) => date.isAfter(latest) ? date : latest);
+    final latestMonth = DateTime(
+      latestAssessmentDate.year,
+      latestAssessmentDate.month,
+    );
+    final currentMonth = DateTime(selectedMonth.year, selectedMonth.month);
+    final canMoveToNextMonth = currentMonth.isBefore(latestMonth);
 
     return HyopeCard(
       child: Column(
@@ -75,7 +84,17 @@ class AdherenceCalendarCard extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.w900),
               ),
               IconButton(
-                onPressed: () => onMonthChanged(DateTime(selectedMonth.year, selectedMonth.month + 1)),
+                onPressed: canMoveToNextMonth
+                    ? () => onMonthChanged(
+                          DateTime(
+                            selectedMonth.year,
+                            selectedMonth.month + 1,
+                          ),
+                        )
+                    : null,
+                tooltip: canMoveToNextMonth
+                    ? '다음 달'
+                    : '최신 기록 이후는 볼 수 없습니다.',
                 icon: const Icon(Icons.chevron_right),
               ),
             ],
@@ -125,18 +144,35 @@ class AdherenceCalendarCard extends StatelessWidget {
                                   return const Expanded(child: SizedBox(height: 50));
                                 }
 
-                                final date = DateTime(selectedMonth.year, selectedMonth.month, dayNumber);
-                                final assessment = findAssessmentByDate(assessments, date);
-                                final isSelected = selectedDate != null && isSameDay(date, selectedDate!);
-                                final mealStatus = aggregateAdherence(assessment, AdherenceType.meal);
-                                final medStatus = aggregateAdherence(assessment, AdherenceType.medication);
+                                final date = DateTime(
+                                  selectedMonth.year,
+                                  selectedMonth.month,
+                                  dayNumber,
+                                );
+                                final assessment =
+                                    findAssessmentByDate(assessments, date);
+                                final isSelected = selectedDate != null &&
+                                    isSameDay(date, selectedDate!);
+                                final isEnabled =
+                                    !date.isAfter(latestAssessmentDate);
+                                final mealStatus = aggregateAdherence(
+                                  assessment,
+                                  AdherenceType.meal,
+                                );
+                                final medStatus = aggregateAdherence(
+                                  assessment,
+                                  AdherenceType.medication,
+                                );
 
                                 return Expanded(
                                   child: GestureDetector(
-                                    onTap: () => onDateSelected(date),
+                                    onTap: isEnabled
+                                        ? () => onDateSelected(date)
+                                        : null,
                                     child: DayAdherenceCell(
                                       date: date,
                                       isSelected: isSelected,
+                                      isEnabled: isEnabled,
                                       mealStatus: mealStatus,
                                       medicationStatus: medStatus,
                                     ),
@@ -442,6 +478,7 @@ class AdherenceRateCard extends StatelessWidget {
 class DayAdherenceCell extends StatelessWidget {
   final DateTime date;
   final bool isSelected;
+  final bool isEnabled;
   final AdherenceAggregate mealStatus;
   final AdherenceAggregate medicationStatus;
 
@@ -449,44 +486,63 @@ class DayAdherenceCell extends StatelessWidget {
     super.key,
     required this.date,
     required this.isSelected,
+    required this.isEnabled,
     required this.mealStatus,
     required this.medicationStatus,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 50,
-      margin: const EdgeInsets.symmetric(horizontal: 2),
-      padding: const EdgeInsets.all(5),
-      decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFF4F80FF).withOpacity(0.10) : const Color(0xFFF7F8FC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isSelected ? const Color(0xFF4F80FF) : const Color(0xFFE8ECF5),
-          width: isSelected ? 1.6 : 1,
+    final backgroundColor = !isEnabled
+        ? const Color(0xFFF1F2F6)
+        : isSelected
+            ? const Color(0xFF4F80FF).withOpacity(0.10)
+            : const Color(0xFFF7F8FC);
+    final borderColor = !isEnabled
+        ? const Color(0xFFE4E6EC)
+        : isSelected
+            ? const Color(0xFF4F80FF)
+            : const Color(0xFFE8ECF5);
+
+    return Opacity(
+      opacity: isEnabled ? 1 : 0.48,
+      child: Container(
+        height: 50,
+        margin: const EdgeInsets.symmetric(horizontal: 2),
+        padding: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: borderColor,
+            width: isSelected && isEnabled ? 1.6 : 1,
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '${date.day}',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w900,
-              color: isSelected ? const Color(0xFF4F80FF) : const Color(0xFF3A4256),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${date.day}',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+                color: !isEnabled
+                    ? const Color(0xFF9AA2B4)
+                    : isSelected
+                        ? const Color(0xFF4F80FF)
+                        : const Color(0xFF3A4256),
+              ),
             ),
-          ),
-          const Spacer(),
-          Row(
-            children: [
-              _TinyStatusChip(label: '식', status: mealStatus),
-              const SizedBox(width: 3),
-              _TinyStatusChip(label: '약', status: medicationStatus),
-            ],
-          ),
-        ],
+            const Spacer(),
+            Row(
+              children: [
+                _TinyStatusChip(label: '식', status: mealStatus),
+                const SizedBox(width: 3),
+                _TinyStatusChip(label: '약', status: medicationStatus),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

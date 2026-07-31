@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../models/hyope_models.dart';
 import '../services/assessment_service.dart';
+import '../services/auth_service.dart';
 import 'main_screen.dart';
 import 'recipient_onboarding_screen.dart';
+import 'role_selection_screen.dart';
 
 class RecipientListScreen extends StatefulWidget {
   final AppUserRole userRole;
@@ -50,6 +52,39 @@ class _RecipientListScreenState extends State<RecipientListScreen> {
     setState(() => recipients = [...recipients, created]);
   }
 
+  Future<void> _logout() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('로그아웃'),
+        content: const Text('현재 계정에서 로그아웃하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFE5484D),
+            ),
+            child: const Text('로그아웃'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout != true || !mounted) return;
+
+    AuthService().logout();
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(
+        builder: (_) => const RoleSelectionScreen(),
+      ),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,6 +95,14 @@ class _RecipientListScreenState extends State<RecipientListScreen> {
           '관리 피보호자',
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
+        actions: [
+          IconButton(
+            onPressed: _logout,
+            tooltip: '로그아웃',
+            icon: const Icon(Icons.logout_rounded),
+          ),
+          const SizedBox(width: 6),
+        ],
       ),
       body: SafeArea(
         top: false,

@@ -10,6 +10,10 @@ class AuthException implements Exception {
 class AuthService {
   final _client = ApiClient();
 
+  void logout() {
+    AuthSession.instance.clear();
+  }
+
   Future<String> login({
     required String loginId,
     required String password,
