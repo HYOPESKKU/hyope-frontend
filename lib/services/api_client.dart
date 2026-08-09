@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-const String kApiBaseUrl = 'http://localhost:8080';
+const String kApiBaseUrl = 'http://10.0.2.2:8080';
 
 class ApiException implements Exception {
   final int statusCode;
