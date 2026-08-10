@@ -4,6 +4,7 @@ import '../models/hyope_models.dart';
 import '../services/api_client.dart';
 import '../services/assessment_service.dart';
 import '../services/auth_service.dart';
+import '../services/recipient_service.dart';
 import '../utils/adherence_utils.dart';
 import '../utils/date_utils.dart';
 import 'conversation_log_screen.dart';
@@ -13,6 +14,7 @@ import 'edit_user_profile_screen.dart';
 import 'notification_settings_screen.dart';
 import 'role_selection_screen.dart';
 import 'user_settings_screen.dart';
+
 
 class MainScreen extends StatefulWidget {
   final AppUserRole userRole;
@@ -68,28 +70,33 @@ class _MainScreenState extends State<MainScreen> {
     _loadAssessments();
   }
 
-  Future<void> _loadAssessments() async {
-    setState(() => loadError = null);
-    try {
-      final result =
-          await AssessmentService().findByRecipient(currentRecipient.id);
-      if (!mounted) return;
-      setState(() {
-        assessments = result;
-        if (result.isNotEmpty) {
-          final latestDate = dateOnly(result.last.measuredAt);
-          selectedMonth = DateTime(latestDate.year, latestDate.month);
-        }
-        selectedDate = null;
-      });
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      setState(() => loadError = e.message);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => loadError = '데이터를 불러오지 못했습니다.');
-    }
+Future<void> _loadAssessments() async {
+  setState(() => loadError = null);
+  try {
+    final results = await Future.wait([
+      AssessmentService().findByRecipient(currentRecipient.id),
+      RecipientService().readRecipient(currentRecipient.id),
+    ]);
+    final result = results[0] as List<DailyAssessment>;
+    final refreshedRecipient = results[1] as RecipientSummary;
+    if (!mounted) return;
+    setState(() {
+      assessments = result;
+      currentRecipient = refreshedRecipient;
+      if (result.isNotEmpty) {
+        final latestDate = dateOnly(result.last.measuredAt);
+        selectedMonth = DateTime(latestDate.year, latestDate.month);
+      }
+      selectedDate = null;
+    });
+  } on ApiException catch (e) {
+    if (!mounted) return;
+    setState(() => loadError = e.message);
+  } catch (_) {
+    if (!mounted) return;
+    setState(() => loadError = '데이터를 불러오지 못했습니다.');
   }
+}
 
   DailyAssessment? get selectedAssessment {
     final date = selectedDate;

@@ -174,6 +174,9 @@ class RecipientSummary {
   final Gender gender;
   final String relation;
   final String phoneNumber;
+  final String? address;
+  final List<String> hobbies;
+  final List<String> recentEvents;
 
   const RecipientSummary({
     required this.id,
@@ -182,6 +185,9 @@ class RecipientSummary {
     required this.gender,
     required this.relation,
     required this.phoneNumber,
+    this.address,
+    this.hobbies = const [],
+    this.recentEvents = const [],
   });
 
   int get age => calculateAge(birthDate);
@@ -195,6 +201,9 @@ class RecipientSummary {
     Gender? gender,
     String? relation,
     String? phoneNumber,
+    String? address,
+    List<String>? hobbies,
+    List<String>? recentEvents,
   }) {
     return RecipientSummary(
       id: id ?? this.id,
@@ -203,6 +212,9 @@ class RecipientSummary {
       gender: gender ?? this.gender,
       relation: relation ?? this.relation,
       phoneNumber: phoneNumber ?? this.phoneNumber,
+      address: address ?? this.address,
+      hobbies: hobbies ?? this.hobbies,
+      recentEvents: recentEvents ?? this.recentEvents,
     );
   }
 }

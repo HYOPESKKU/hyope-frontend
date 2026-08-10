@@ -7,6 +7,7 @@ import '../widgets/adherence_widgets.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/header_section.dart';
 import '../widgets/metric_widgets.dart';
+import '../widgets/recipient_info_card.dart';
 import '../widgets/risk_widgets.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -131,6 +132,12 @@ class DashboardScreen extends StatelessWidget {
                         latestAssessment: current,
                       ),
                       const SizedBox(height: 14),
+                      if (recipient.address != null ||
+                          recipient.hobbies.isNotEmpty ||
+                          recipient.recentEvents.isNotEmpty) ...[
+                        RecipientInfoCard(recipient: recipient),
+                        const SizedBox(height: 14),
+                      ],
 
                       // 접이식 캘린더
                       _CollapsibleCalendarHeader(

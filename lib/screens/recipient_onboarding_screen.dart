@@ -29,6 +29,7 @@ class _RecipientOnboardingScreenState extends State<RecipientOnboardingScreen> {
   final _lastNameController = TextEditingController();
   final _firstNameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _addressController = TextEditingController();
 
   DateTime? _birthDate;
   Gender _gender = Gender.male;
@@ -40,6 +41,7 @@ class _RecipientOnboardingScreenState extends State<RecipientOnboardingScreen> {
     _lastNameController.dispose();
     _firstNameController.dispose();
     _phoneController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
@@ -73,6 +75,9 @@ class _RecipientOnboardingScreenState extends State<RecipientOnboardingScreen> {
         gender: _gender,
         relationToGuardian: _relationKey,
         phoneNumber: _phoneController.text.trim(),
+        address: _addressController.text.trim().isEmpty
+            ? null
+            : _addressController.text.trim(),
       );
       if (!mounted) return;
       Navigator.of(context).pop(created);
@@ -242,6 +247,14 @@ class _RecipientOnboardingScreenState extends State<RecipientOnboardingScreen> {
                         decoration: authInputDecoration(hint: '010-1234-5678'),
                         validator: (v) =>
                             (v == null || v.trim().isEmpty) ? '필수' : null,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    LabeledField(
+                      label: '주소',
+                      child: TextFormField(
+                        controller: _addressController,
+                        decoration: authInputDecoration(hint: '예: 서울특별시 강남구 ...'),
                       ),
                     ),
                     const SizedBox(height: 28),

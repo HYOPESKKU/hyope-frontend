@@ -10,6 +10,11 @@ class RecipientService {
     return list.cast<Map<String, dynamic>>().map(_fromJson).toList();
   }
 
+  Future<RecipientSummary> readRecipient(int id) async {
+    final json = await _client.get('/recipients/$id') as Map<String, dynamic>;
+    return _fromJson(json);
+  }
+
   Future<RecipientSummary> createRecipient({
     required int guardianId,
     required String firstName,
@@ -18,6 +23,7 @@ class RecipientService {
     required Gender gender,
     required String relationToGuardian,
     required String phoneNumber,
+    String? address,
   }) async {
     final json = await _client.post(
       '/guardians/$guardianId/recipients',
@@ -29,6 +35,7 @@ class RecipientService {
         'gender': gender == Gender.male ? 'MALE' : 'FEMALE',
         'relationToGuardian': relationToGuardian,
         'phoneNumber': phoneNumber,
+        'address': address,
       },
     ) as Map<String, dynamic>;
     return _fromJson(json);
@@ -42,6 +49,7 @@ class RecipientService {
     required Gender gender,
     required String relationToGuardian, // 백엔드 RelationType 문자열, 예: 'PARENT'
     required String phoneNumber,
+    String? address,
   }) async {
     final json = await _client.patch(
       '/recipients/$id',
@@ -52,6 +60,7 @@ class RecipientService {
         'gender': gender == Gender.male ? 'MALE' : 'FEMALE',
         'relationToGuardian': relationToGuardian,
         'phoneNumber': phoneNumber,
+        'address': address,
       },
     ) as Map<String, dynamic>;
     return _fromJson(json);
@@ -65,6 +74,13 @@ class RecipientService {
       gender: (json['gender'] as String) == 'MALE' ? Gender.male : Gender.female,
       relation: relationLabel(json['relationToGuardian'] as String),
       phoneNumber: json['phoneNumber'] as String,
+      address: json['address'] as String?,
+      hobbies: (json['hobbies'] as List<dynamic>? ?? [])
+          .map((e) => e as String)
+          .toList(),
+      recentEvents: (json['recent_events'] as List<dynamic>? ?? [])
+          .map((e) => e as String)
+          .toList(),
     );
   }
 
