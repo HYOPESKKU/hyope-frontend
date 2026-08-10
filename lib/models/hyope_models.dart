@@ -228,6 +228,50 @@ int calculateAge(DateTime birthDate) {
   return result;
 }
 
+class CallSchedule {
+  final int id;
+  final int recipientId;
+  final bool isActive;
+  final TimeOfDay scheduledTime;
+  final int? intervalDays;
+
+  const CallSchedule({
+    required this.id,
+    required this.recipientId,
+    required this.isActive,
+    required this.scheduledTime,
+    this.intervalDays,
+  });
+
+  factory CallSchedule.fromJson(Map<String, dynamic> json) {
+    return CallSchedule(
+      id: _toInt(json['id']),
+      recipientId: _toInt(json['recipient_id'] ?? json['recipientId']),
+      isActive: json['isActive'] as bool? ?? true,
+      scheduledTime: parseTimeOfDay(json['scheduledTime'] as String),
+      intervalDays: json['intervalDays'] as int?,
+    );
+  }
+}
+
+TimeOfDay parseTimeOfDay(String value) {
+  final parts = value.split(':');
+  return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+}
+
+String formatTimeOfDayForApi(TimeOfDay time) {
+  final hh = time.hour.toString().padLeft(2, '0');
+  final mm = time.minute.toString().padLeft(2, '0');
+  return '$hh:$mm:00';
+}
+
+String formatTimeOfDayKo(TimeOfDay time) {
+  final isAm = time.hour < 12;
+  final hour12 = time.hour % 12 == 0 ? 12 : time.hour % 12;
+  final minute = time.minute.toString().padLeft(2, '0');
+  return '${isAm ? '오전' : '오후'} $hour12:$minute';
+}
+
 class DailyAssessment {
   final int id;
   final int recipientId;
