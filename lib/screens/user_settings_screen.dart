@@ -7,6 +7,7 @@ class UserSettingsScreen extends StatelessWidget {
   final AppUserRole userRole;
   final UserProfile userProfile;
   final RecipientSummary recipient;
+  final CallSchedule? callSchedule;
   final bool biometricLockEnabled;
   final bool darkModeEnabled;
   final VoidCallback onEditUserProfile;
@@ -20,6 +21,7 @@ class UserSettingsScreen extends StatelessWidget {
     required this.userRole,
     required this.userProfile,
     required this.recipient,
+    required this.callSchedule,
     required this.biometricLockEnabled,
     required this.darkModeEnabled,
     required this.onEditUserProfile,
@@ -111,23 +113,35 @@ class UserSettingsScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              const HyopeCard(
+              HyopeCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SectionTitle(title: 'ARS 모니터링 설정'),
-                    SizedBox(height: 10),
+                    SectionTitle(
+                      title: 'ARS 모니터링 설정',
+                      trailing: _EditButton(onPressed: onEditRecipient),
+                    ),
+                    const SizedBox(height: 10),
                     SettingsInfoRow(
                       icon: Icons.schedule_outlined,
-                      title: '매일 전화 시간',
-                      value: '오전 10:00',
+                      title: '전화 예약 시간',
+                      value: callSchedule == null
+                          ? '설정되지 않음'
+                          : formatTimeOfDayKo(callSchedule!.scheduledTime),
                     ),
                     SettingsInfoRow(
+                      icon: Icons.repeat_rounded,
+                      title: '반복 간격',
+                      value: callSchedule == null
+                          ? '-'
+                          : '${callSchedule!.intervalDays ?? 1}일마다',
+                    ),
+                    const SettingsInfoRow(
                       icon: Icons.replay_outlined,
                       title: '무응답 재시도',
                       value: '2회',
                     ),
-                    SettingsInfoRow(
+                    const SettingsInfoRow(
                       icon: Icons.delete_outline,
                       title: '녹음 보관 기간',
                       value: '30일',

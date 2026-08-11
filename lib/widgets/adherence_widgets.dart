@@ -704,6 +704,59 @@ class _SimpleStatsText extends StatelessWidget {
   }
 }
 
+class IncompleteCategoriesBadge extends StatelessWidget {
+  final List<String> categories;
+
+  const IncompleteCategoriesBadge({super.key, required this.categories});
+
+  static const _color = Color(0xFF9AA2B4);
+
+  @override
+  Widget build(BuildContext context) {
+    if (categories.isEmpty) return const SizedBox.shrink();
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(11),
+      decoration: BoxDecoration(
+        color: _color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _color.withOpacity(0.3)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.help, size: 18, color: _color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '일부 항목 미확인 (${categories.length}개)',
+                  style: const TextStyle(
+                    fontSize: 12.2,
+                    fontWeight: FontWeight.w900,
+                    color: _color,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${categories.join(', ')} — 통화가 일찍 종료되어 확인되지 않았습니다.',
+                  style: const TextStyle(
+                    fontSize: 10.8,
+                    fontWeight: FontWeight.w700,
+                    color: _color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _TinyStatusChip extends StatelessWidget {
   final String label;
   final AdherenceAggregate status;

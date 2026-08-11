@@ -194,6 +194,10 @@ class DashboardScreen extends StatelessWidget {
                       const SizedBox(height: 14),
 
                       RiskGaugeCard(assessment: current, title: _riskTitle),
+                      if (current.incompleteCategories.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        IncompleteCategoriesBadge(categories: current.incompleteCategories),
+                      ],
                       const SizedBox(height: 14),
                       const SectionTitle(title: '영역별 건강 지표'),
                       const SizedBox(height: 10),
@@ -239,6 +243,8 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
+// 통화 분석 기록이 아직 없는 대상자용 — 지표 카드 대신 안내 카드 하나만 보여준다.
+// (assessments가 비어 있으면 .last/.reduce가 예외를 던지는 위 build()의 계산들을 아예 스킵한다)
 class _EmptyDashboard extends StatelessWidget {
   final RecipientSummary recipient;
 
@@ -247,78 +253,53 @@ class _EmptyDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: SingleChildScrollView(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 430),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${recipient.name}님 리포트',
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF182033),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    recipient.relation,
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      color: Color(0xFF7A8294),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  if (recipient.address != null ||
-                      recipient.hobbies.isNotEmpty ||
-                      recipient.recentEvents.isNotEmpty) ...[
-                    RecipientInfoCard(recipient: recipient),
-                    const SizedBox(height: 18),
-                  ],
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: const Color(0xFFE7EAF2)),
-                    ),
-                    child: Column(
-                      children: [
-                        const Icon(
-                          Icons.insights_outlined,
-                          size: 40,
-                          color: Color(0xFF9AA2B4),
-                        ),
-                        const SizedBox(height: 14),
-                        const Text(
-                          '아직 분석 데이터가 없습니다',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF182033),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          '통화 일정이 예정대로 진행되면\n분석 결과가 이곳에 표시됩니다.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF7A8294),
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 430),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                HeaderSection(recipient: recipient, latestAssessment: null),
+                const SizedBox(height: 14),
+                if (recipient.address != null ||
+                    recipient.hobbies.isNotEmpty ||
+                    recipient.recentEvents.isNotEmpty) ...[
+                  RecipientInfoCard(recipient: recipient),
+                  const SizedBox(height: 14),
                 ],
-              ),
+                HyopeCard(
+                  child: Column(
+                    children: [
+                      const Icon(
+                        Icons.insights_outlined,
+                        size: 40,
+                        color: Color(0xFF9AA2B4),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        '아직 통화 분석 기록이 없습니다',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF182033),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        '첫 통화가 완료되면 여기에 우울·인지·정서·신체 지표가 표시됩니다.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.5,
+                          color: Color(0xFF7A8294),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),

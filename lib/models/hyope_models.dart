@@ -228,6 +228,50 @@ int calculateAge(DateTime birthDate) {
   return result;
 }
 
+class CallSchedule {
+  final int id;
+  final int recipientId;
+  final bool isActive;
+  final TimeOfDay scheduledTime;
+  final int? intervalDays;
+
+  const CallSchedule({
+    required this.id,
+    required this.recipientId,
+    required this.isActive,
+    required this.scheduledTime,
+    this.intervalDays,
+  });
+
+  factory CallSchedule.fromJson(Map<String, dynamic> json) {
+    return CallSchedule(
+      id: _toInt(json['id']),
+      recipientId: _toInt(json['recipient_id'] ?? json['recipientId']),
+      isActive: json['isActive'] as bool? ?? true,
+      scheduledTime: parseTimeOfDay(json['scheduledTime'] as String),
+      intervalDays: json['intervalDays'] as int?,
+    );
+  }
+}
+
+TimeOfDay parseTimeOfDay(String value) {
+  final parts = value.split(':');
+  return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+}
+
+String formatTimeOfDayForApi(TimeOfDay time) {
+  final hh = time.hour.toString().padLeft(2, '0');
+  final mm = time.minute.toString().padLeft(2, '0');
+  return '$hh:$mm:00';
+}
+
+String formatTimeOfDayKo(TimeOfDay time) {
+  final isAm = time.hour < 12;
+  final hour12 = time.hour % 12 == 0 ? 12 : time.hour % 12;
+  final minute = time.minute.toString().padLeft(2, '0');
+  return '${isAm ? '오전' : '오후'} $hour12:$minute';
+}
+
 class DailyAssessment {
   final int id;
   final int recipientId;
@@ -242,6 +286,7 @@ class DailyAssessment {
   final String summary;
   final String recommendation;
   final List<AdherenceRecord> adherenceRecords;
+  final List<String> incompleteCategories;
 
   const DailyAssessment({
     required this.id,
@@ -257,6 +302,7 @@ class DailyAssessment {
     required this.summary,
     required this.recommendation,
     required this.adherenceRecords,
+    this.incompleteCategories = const [],
   });
 
   factory DailyAssessment.fromJson(Map<String, dynamic> json) {
@@ -271,6 +317,12 @@ class DailyAssessment {
             )
             .toList()
         : <AdherenceRecord>[];
+
+    final rawIncompleteCategories =
+        json['incompleteCategories'] ?? json['incomplete_categories'];
+    final incompleteCategories = rawIncompleteCategories is List
+        ? rawIncompleteCategories.map((e) => e.toString()).toList()
+        : const <String>[];
 
     return DailyAssessment(
       id: _toInt(json['id'] ?? json['assessment_id'] ?? 0),
@@ -288,6 +340,7 @@ class DailyAssessment {
       summary: json['summary'] as String? ?? '',
       recommendation: json['recommendation'] as String? ?? '',
       adherenceRecords: adherenceRecords,
+      incompleteCategories: incompleteCategories,
     );
   }
 }
@@ -545,6 +598,58 @@ class ConversationMessage {
       question: json['question'] as String? ?? '',
       answer: json['answer'] as String? ?? '',
       askedAt: DateTime.parse(json['askedAt'] as String),
+    );
+  }
+}
+
+enum NotificationCategory { callMissed, callFailed }
+
+NotificationCategory parseNotificationCategory(String value) {
+  switch (value.toUpperCase()) {
+    case 'CALL_FAILED':
+      return NotificationCategory.callFailed;
+    case 'CALL_MISSED':
+    default:
+      return NotificationCategory.callMissed;
+  }
+}
+
+class GuardianNotification {
+  final int id;
+  final int recipientId;
+  final NotificationCategory type;
+  final String message;
+  final bool isRead;
+  final DateTime createdAt;
+
+  const GuardianNotification({
+    required this.id,
+    required this.recipientId,
+    required this.type,
+    required this.message,
+    required this.isRead,
+    required this.createdAt,
+  });
+
+  GuardianNotification copyWith({bool? isRead}) {
+    return GuardianNotification(
+      id: id,
+      recipientId: recipientId,
+      type: type,
+      message: message,
+      isRead: isRead ?? this.isRead,
+      createdAt: createdAt,
+    );
+  }
+
+  factory GuardianNotification.fromJson(Map<String, dynamic> json) {
+    return GuardianNotification(
+      id: _toInt(json['id']),
+      recipientId: _toInt(json['recipient_id'] ?? json['recipientId']),
+      type: parseNotificationCategory(json['type'] as String? ?? 'CALL_MISSED'),
+      message: json['message'] as String? ?? '',
+      isRead: json['isRead'] as bool? ?? json['is_read'] as bool? ?? false,
+      createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
 }

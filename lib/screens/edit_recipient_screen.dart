@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/hyope_models.dart';
 import '../services/api_client.dart';
+import '../services/call_schedule_service.dart';
 import '../services/recipient_service.dart';
 
 const _relationOptions = <String, String>{
@@ -33,9 +34,14 @@ class _EditRecipientScreenState extends State<EditRecipientScreen> {
   late final TextEditingController _lastNameController;
   late final TextEditingController _firstNameController;
   late final TextEditingController _phoneController;
+  late final TextEditingController _addressController;
+  late final TextEditingController _intervalDaysController;
   late DateTime _birthDate;
   late Gender _gender;
   late String _relationKey;
+  TimeOfDay? _callTime;
+  int? _callScheduleId;
+  bool _callScheduleIsActive = true;
   bool _isSaving = false;
 
   @override
@@ -48,6 +54,8 @@ class _EditRecipientScreenState extends State<EditRecipientScreen> {
     _firstNameController =
         TextEditingController(text: name.isEmpty ? '' : name.substring(1));
     _phoneController = TextEditingController(text: widget.recipient.phoneNumber);
+    _addressController = TextEditingController(text: widget.recipient.address ?? '');
+    _intervalDaysController = TextEditingController(text: '1');
     _birthDate = widget.recipient.birthDate;
     _gender = widget.recipient.gender;
     _relationKey = _relationOptions.entries
@@ -56,6 +64,7 @@ class _EditRecipientScreenState extends State<EditRecipientScreen> {
           orElse: () => const MapEntry('OTHER', '기타'),
         )
         .key;
+    _loadCallSchedule();
   }
 
   @override
@@ -63,7 +72,26 @@ class _EditRecipientScreenState extends State<EditRecipientScreen> {
     _lastNameController.dispose();
     _firstNameController.dispose();
     _phoneController.dispose();
+    _addressController.dispose();
+    _intervalDaysController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadCallSchedule() async {
+    try {
+      final schedules =
+          await CallScheduleService().findByRecipient(widget.recipient.id);
+      if (!mounted || schedules.isEmpty) return;
+      final schedule = schedules.first;
+      setState(() {
+        _callScheduleId = schedule.id;
+        _callTime = schedule.scheduledTime;
+        _callScheduleIsActive = schedule.isActive;
+        _intervalDaysController.text = (schedule.intervalDays ?? 1).toString();
+      });
+    } catch (_) {
+      // 예약된 시간대가 없거나 조회에 실패하면 새로 등록할 수 있도록 조용히 넘어갑니다.
+    }
   }
 
   Future<void> _selectBirthDate() async {
@@ -82,6 +110,17 @@ class _EditRecipientScreenState extends State<EditRecipientScreen> {
     }
   }
 
+  Future<void> _pickCallTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _callTime ?? const TimeOfDay(hour: 10, minute: 0),
+      helpText: '전화 예약 시간대 선택',
+      cancelText: '취소',
+      confirmText: '선택',
+    );
+    if (picked != null) setState(() => _callTime = picked);
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -95,7 +134,35 @@ class _EditRecipientScreenState extends State<EditRecipientScreen> {
         gender: _gender,
         relationToGuardian: _relationKey,
         phoneNumber: _phoneController.text.trim(),
+        address: _addressController.text.trim().isEmpty
+            ? null
+            : _addressController.text.trim(),
       );
+
+      if (_callTime != null) {
+        final intervalDays = int.tryParse(_intervalDaysController.text.trim());
+        if (_callScheduleId != null) {
+          await CallScheduleService().update(
+            id: _callScheduleId!,
+            recipientId: widget.recipient.id,
+            scheduledTime: _callTime!,
+            intervalDays: intervalDays,
+            isActive: _callScheduleIsActive,
+          );
+        } else {
+          final created = await CallScheduleService().create(
+            recipientId: widget.recipient.id,
+            scheduledTime: _callTime!,
+            intervalDays: intervalDays,
+            isActive: _callScheduleIsActive,
+          );
+          _callScheduleId = created.id;
+        }
+      } else if (_callScheduleId != null) {
+        await CallScheduleService().delete(_callScheduleId!);
+        _callScheduleId = null;
+      }
+
       if (!mounted) return;
       Navigator.of(context).pop(updated);
     } on ApiException catch (e) {
@@ -245,22 +312,88 @@ class _EditRecipientScreenState extends State<EditRecipientScreen> {
                   const SizedBox(height: 12),
                   _EditSection(
                     title: '연락 정보',
-                    child: TextFormField(
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      textInputAction: TextInputAction.done,
-                      decoration: _inputDecoration(
-                        label: '연락처',
-                        icon: Icons.call_outlined,
-                        hint: '010-0000-0000',
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return '연락처를 입력해 주세요.';
-                        }
-                        return null;
-                      },
-                      onFieldSubmitted: (_) => _save(),
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          textInputAction: TextInputAction.next,
+                          decoration: _inputDecoration(
+                            label: '연락처',
+                            icon: Icons.call_outlined,
+                            hint: '010-0000-0000',
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return '연락처를 입력해 주세요.';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 14),
+                        TextFormField(
+                          controller: _addressController,
+                          textInputAction: TextInputAction.done,
+                          decoration: _inputDecoration(
+                            label: '주소',
+                            icon: Icons.home_outlined,
+                            hint: '예: 서울특별시 강남구 ...',
+                          ),
+                          onFieldSubmitted: (_) => _save(),
+                        ),
+                        const SizedBox(height: 14),
+                        InkWell(
+                          borderRadius: BorderRadius.circular(14),
+                          onTap: _pickCallTime,
+                          child: InputDecorator(
+                            decoration: _inputDecoration(
+                              label: '전화 예약 시간대',
+                              icon: Icons.schedule_outlined,
+                              hint: '예: 오전 10:00',
+                            ).copyWith(
+                              suffixIcon: _callTime == null
+                                  ? null
+                                  : IconButton(
+                                      icon: const Icon(Icons.close_rounded, size: 18),
+                                      onPressed: () => setState(() => _callTime = null),
+                                    ),
+                            ),
+                            child: Text(
+                              _callTime == null
+                                  ? '예: 오전 10:00'
+                                  : formatTimeOfDayKo(_callTime!),
+                              style: TextStyle(
+                                color: _callTime == null
+                                    ? const Color(0xFF9AA2B4)
+                                    : const Color(0xFF263044),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (_callTime != null) ...[
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            controller: _intervalDaysController,
+                            keyboardType: TextInputType.number,
+                            textInputAction: TextInputAction.done,
+                            decoration: _inputDecoration(
+                              label: '반복 간격 (일)',
+                              icon: Icons.repeat_rounded,
+                              hint: '예: 1(매일), 7(매주)',
+                            ),
+                            validator: (value) {
+                              if (_callTime == null) return null;
+                              final n = int.tryParse((value ?? '').trim());
+                              if (n == null || n <= 0) {
+                                return '1 이상의 숫자를 입력해 주세요.';
+                              }
+                              return null;
+                            },
+                            onFieldSubmitted: (_) => _save(),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                   const SizedBox(height: 20),

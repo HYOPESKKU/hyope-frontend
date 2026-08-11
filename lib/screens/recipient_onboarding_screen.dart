@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/hyope_models.dart';
 import '../services/api_client.dart';
+import '../services/call_schedule_service.dart';
 import '../services/recipient_service.dart';
 import '../widgets/auth_form_widgets.dart';
 
@@ -30,10 +31,12 @@ class _RecipientOnboardingScreenState extends State<RecipientOnboardingScreen> {
   final _firstNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
+  final _intervalDaysController = TextEditingController(text: '1');
 
   DateTime? _birthDate;
   Gender _gender = Gender.male;
   String _relationKey = 'PARENT';
+  TimeOfDay? _callTime;
   bool _isSaving = false;
 
   @override
@@ -42,6 +45,7 @@ class _RecipientOnboardingScreenState extends State<RecipientOnboardingScreen> {
     _firstNameController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
+    _intervalDaysController.dispose();
     super.dispose();
   }
 
@@ -54,6 +58,17 @@ class _RecipientOnboardingScreenState extends State<RecipientOnboardingScreen> {
       lastDate: now,
     );
     if (picked != null) setState(() => _birthDate = picked);
+  }
+
+  Future<void> _pickCallTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _callTime ?? const TimeOfDay(hour: 10, minute: 0),
+      helpText: '전화 예약 시간대 선택',
+      cancelText: '취소',
+      confirmText: '선택',
+    );
+    if (picked != null) setState(() => _callTime = picked);
   }
 
   Future<void> _save() async {
@@ -79,6 +94,23 @@ class _RecipientOnboardingScreenState extends State<RecipientOnboardingScreen> {
             ? null
             : _addressController.text.trim(),
       );
+      if (_callTime != null) {
+        try {
+          await CallScheduleService().create(
+            recipientId: created.id,
+            scheduledTime: _callTime!,
+            intervalDays: int.tryParse(_intervalDaysController.text.trim()),
+          );
+        } catch (_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('전화 예약 시간대 저장에 실패했습니다. 정보 수정 화면에서 다시 설정해주세요.'),
+              ),
+            );
+          }
+        }
+      }
       if (!mounted) return;
       Navigator.of(context).pop(created);
     } on ApiException catch (e) {
@@ -257,6 +289,51 @@ class _RecipientOnboardingScreenState extends State<RecipientOnboardingScreen> {
                         decoration: authInputDecoration(hint: '예: 서울특별시 강남구 ...'),
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    LabeledField(
+                      label: '전화 예약 시간대',
+                      child: InkWell(
+                        onTap: _pickCallTime,
+                        borderRadius: BorderRadius.circular(14),
+                        child: InputDecorator(
+                          decoration: authInputDecoration(hint: '예: 오전 10:00').copyWith(
+                            suffixIcon: _callTime == null
+                                ? null
+                                : IconButton(
+                                    icon: const Icon(Icons.close_rounded, size: 18),
+                                    onPressed: () => setState(() => _callTime = null),
+                                  ),
+                          ),
+                          child: Text(
+                            _callTime == null ? '예: 오전 10:00' : formatTimeOfDayKo(_callTime!),
+                            style: TextStyle(
+                              color: _callTime == null
+                                  ? const Color(0xFF9AA2B4)
+                                  : const Color(0xFF182033),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (_callTime != null) ...[
+                      const SizedBox(height: 16),
+                      LabeledField(
+                        label: '반복 간격 (일)',
+                        child: TextFormField(
+                          controller: _intervalDaysController,
+                          keyboardType: TextInputType.number,
+                          decoration: authInputDecoration(hint: '예: 1(매일), 7(매주)'),
+                          validator: (v) {
+                            if (_callTime == null) return null;
+                            final n = int.tryParse((v ?? '').trim());
+                            if (n == null || n <= 0) {
+                              return '1 이상의 숫자를 입력해 주세요.';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 28),
                     SizedBox(
                       height: 52,
