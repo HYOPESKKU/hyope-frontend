@@ -213,7 +213,13 @@ class RiskGaugePainter extends CustomPainter {
 }
 
 class MiniLineChartPainter extends CustomPainter {
-  final List<double> values;
+  /// null은 그 날 측정이 안 됐다는 뜻이다.
+  ///
+  /// 통화가 실패했거나 어르신이 답을 안 한 날은 점수가 측정값이 아니라
+  /// 기본값이다. 그대로 선을 이으면 보호자가 "이 날 좋아졌다"로 읽는데
+  /// 실제로는 측정을 못 한 날이라 오해를 부른다. 그래서 선을 끊고 속이 빈
+  /// 점으로 그린다.
+  final List<double?> values;
   final List<DateTime> dates;
   final Color color;
   final bool showDateLabels;
@@ -234,20 +240,31 @@ class MiniLineChartPainter extends CustomPainter {
     final chartTop = 2.0;
     final chartBottom = showDateLabels ? size.height - 16.0 : size.height;
 
+    // 측정된 구간만 이어 그린다. 미측정 지점에서 path를 끊는다.
     final path = Path();
-    final points = <Offset>[];
+    final points = <Offset?>[];
+    var penDown = false;
 
     for (int i = 0; i < values.length; i++) {
       final x = chartLeft + (chartRight - chartLeft) * i / (values.length - 1);
-      final normalized = (values[i] / 10.0).clamp(0.0, 1.0).toDouble();
+      final value = values[i];
+
+      if (value == null) {
+        points.add(null);
+        penDown = false; // 다음 측정값에서 선을 새로 시작한다
+        continue;
+      }
+
+      final normalized = (value / 10.0).clamp(0.0, 1.0).toDouble();
       final y = chartBottom - normalized * (chartBottom - chartTop);
       final point = Offset(x, y);
       points.add(point);
 
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
+      if (penDown) {
         path.lineTo(x, y);
+      } else {
+        path.moveTo(x, y);
+        penDown = true;
       }
     }
 
@@ -267,13 +284,29 @@ class MiniLineChartPainter extends CustomPainter {
 
     final dotPaint = Paint()..color = color;
     for (final point in points) {
-      canvas.drawCircle(point, 2.0, dotPaint);
+      if (point != null) canvas.drawCircle(point, 2.0, dotPaint);
+    }
+
+    // 미측정 지점은 기준선 위에 회색 빈 점으로 표시한다. 아무것도 안 그리면
+    // 그 날 통화가 없었는지 화면 오류인지 구분이 안 된다.
+    final missingPaint = Paint()
+      ..color = const Color(0xFFC7CDDA)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+    for (int i = 0; i < points.length; i++) {
+      if (points[i] != null) continue;
+      final x = chartLeft + (chartRight - chartLeft) * i / (values.length - 1);
+      canvas.drawCircle(Offset(x, chartBottom - 3), 2.2, missingPaint);
     }
 
     if (showDateLabels && dates.length == values.length) {
       final labelIndexes = <int>{0, values.length ~/ 2, values.length - 1};
       for (final index in labelIndexes) {
-        final point = points[index];
+        final point = points[index] ??
+            Offset(
+              chartLeft + (chartRight - chartLeft) * index / (values.length - 1),
+              chartBottom,
+            );
         final date = dates[index];
         _drawAxisLabel(
           canvas,

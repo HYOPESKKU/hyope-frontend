@@ -7,7 +7,8 @@ class MetricSummaryCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final double score;
-  final List<double> values;
+  /// null은 그 날 측정이 안 됐다는 뜻이다(DailyAssessment.isMeasured).
+  final List<double?> values;
   final List<DateTime> dates;
   final Color color;
   final IconData icon;
@@ -29,7 +30,16 @@ class MetricSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final previousWeek = values.length > 7 ? values[values.length - 8] : score;
+    // 7일 전이 미측정이면 그 앞으로 거슬러 가장 가까운 측정값을 쓴다.
+    // null을 0으로 취급하면 증감이 엉뚱하게 커진다.
+    double previousWeek = score;
+    for (var i = values.length - 8; i >= 0; i--) {
+      final v = values[i];
+      if (v != null) {
+        previousWeek = v;
+        break;
+      }
+    }
     final diff = score - previousWeek;
     final isBetter = lowGood ? diff <= 0 : diff >= 0;
     final statusColor = isBetter ? const Color(0xFF2FB86E) : const Color(0xFFE74747);

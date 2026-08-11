@@ -305,6 +305,32 @@ class DailyAssessment {
     this.incompleteCategories = const [],
   });
 
+  /// 날짜를 못 받은 기록. 발신 자체가 실패했을 때 이렇게 온다.
+  ///
+  /// 파싱 단계에서 epoch로 대체하므로(_toDate) 1970년이면 실제 날짜가 아니다.
+  bool get hasNoDate => measuredAt.isBefore(DateTime(2000));
+
+  /// 채점이 이뤄지지 않은 기록.
+  ///
+  /// 채점 서비스가 연결되기 전에는 백엔드가 모든 점수를 0.5로 채운
+  /// placeholder를 보낸다. 실제 측정값이 다섯 지표 모두 정확히 0.5로 나오는
+  /// 일은 사실상 없으므로 이 조합을 미채점으로 본다.
+  bool get isPlaceholder =>
+      depressionScore == 0.5 &&
+      emotionalStability == 0.5 &&
+      healthRisk == 0.5 &&
+      cognitiveScore == 0.5 &&
+      overallRisk == 0.5;
+
+  /// 이 날의 점수를 추이 그래프에 그려도 되는가.
+  ///
+  /// 통화가 실패했거나 어르신이 답을 안 한 날의 점수는 측정값이 아니라
+  /// 기본값이다. 그대로 선을 이으면 보호자가 "이 날 좋아졌다/나빠졌다"로
+  /// 읽는데, 실제로는 **측정을 못 한 날**이다. 오해를 부르므로 그래프에서
+  /// 끊어서 표시한다.
+  bool get isMeasured =>
+      !hasNoDate && !isPlaceholder && incompleteCategories.isEmpty;
+
   factory DailyAssessment.fromJson(Map<String, dynamic> json) {
     final rawAdherenceRecords = json['adherenceRecords'];
     final adherenceRecords = rawAdherenceRecords is List
