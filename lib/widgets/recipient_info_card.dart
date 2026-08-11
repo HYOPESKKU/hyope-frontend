@@ -12,6 +12,9 @@ class RecipientInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasAddress =
+        recipient.address != null && recipient.address!.trim().isNotEmpty;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -32,56 +35,75 @@ class RecipientInfoCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          if (recipient.address != null && recipient.address!.trim().isNotEmpty)
-            _InfoRow(
-              icon: Icons.location_on_outlined,
-              label: '주소',
-              child: Text(
-                recipient.address!,
-                style: const TextStyle(
-                  fontSize: 13.5,
-                  color: Color(0xFF3A4257),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          if (recipient.hobbies.isNotEmpty)
-            _InfoRow(
-              icon: Icons.palette_outlined,
-              label: '취미',
-              child: Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: recipient.hobbies
-                    .map((hobby) => _Chip(text: hobby))
-                    .toList(),
-              ),
-            ),
-          if (recipient.recentEvents.isNotEmpty)
-            _InfoRow(
-              icon: Icons.event_note_outlined,
-              label: '최근 근황',
-              isLast: true,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: recipient.recentEvents
-                    .map(
-                      (event) => Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Text(
-                          '· $event',
-                          style: const TextStyle(
-                            fontSize: 13.5,
-                            color: Color(0xFF3A4257),
-                            fontWeight: FontWeight.w500,
+          _InfoRow(
+            icon: Icons.location_on_outlined,
+            label: '주소',
+            child: hasAddress
+                ? Text(
+                    recipient.address!,
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      color: Color(0xFF3A4257),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  )
+                : const _EmptyValueText(),
+          ),
+          _InfoRow(
+            icon: Icons.palette_outlined,
+            label: '취미',
+            child: recipient.hobbies.isNotEmpty
+                ? Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: recipient.hobbies
+                        .map((hobby) => _Chip(text: hobby))
+                        .toList(),
+                  )
+                : const _EmptyValueText(),
+          ),
+          _InfoRow(
+            icon: Icons.event_note_outlined,
+            label: '최근 근황',
+            isLast: true,
+            child: recipient.recentEvents.isNotEmpty
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: recipient.recentEvents
+                        .map(
+                          (event) => Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Text(
+                              '· $event',
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                color: Color(0xFF3A4257),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
+                        )
+                        .toList(),
+                  )
+                : const _EmptyValueText(),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _EmptyValueText extends StatelessWidget {
+  const _EmptyValueText();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Text(
+      '없음',
+      style: TextStyle(
+        fontSize: 13.5,
+        color: Color(0xFF9AA2B4),
+        fontWeight: FontWeight.w500,
       ),
     );
   }

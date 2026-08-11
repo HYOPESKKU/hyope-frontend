@@ -18,7 +18,7 @@ import 'role_selection_screen.dart';
 import 'user_settings_screen.dart';
 
 
-class MainScreen extends StatefulWidget {
+class MainScreen extends StatefulWidget { 
   final AppUserRole userRole;
   final RecipientSummary recipient;
   final UserProfile? userProfile;
@@ -56,8 +56,6 @@ class _MainScreenState extends State<MainScreen> {
   bool dailyReportEnabled = true;
   bool highRiskOnlyEnabled = false;
   bool guardianCallReminderEnabled = true;
-  bool biometricLockEnabled = false;
-  bool darkModeEnabled = false;
 
   @override
   void initState() {
@@ -102,9 +100,9 @@ Future<void> _loadAssessments() async {
   } on ApiException catch (e) {
     if (!mounted) return;
     setState(() => loadError = e.message);
-  } catch (_) {
+  } catch (e) {
     if (!mounted) return;
-    setState(() => loadError = '데이터를 불러오지 못했습니다.');
+    setState(() => loadError = '에러: $e');
   }
 }
 
@@ -315,16 +313,8 @@ Future<void> _markNotificationRead(int id) async {
             userProfile: currentUser,
             recipient: currentRecipient,
             callSchedule: callSchedule,
-            biometricLockEnabled: biometricLockEnabled,
-            darkModeEnabled: darkModeEnabled,
             onEditUserProfile: _editUserProfile,
             onEditRecipient: _editRecipient,
-            onBiometricLockChanged: (value) {
-              setState(() => biometricLockEnabled = value);
-            },
-            onDarkModeChanged: (value) {
-              setState(() => darkModeEnabled = value);
-            },
             onLogout: _logout,
           ),
         ],

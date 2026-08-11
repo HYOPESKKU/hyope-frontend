@@ -5,9 +5,20 @@ class AssessmentService {
   final _client = ApiClient();
 
   Future<List<DailyAssessment>> findByRecipient(int recipientId) async {
-    final rawList =
-        await _client.get('/recipients/$recipientId/assessments')
-            as List<dynamic>;
+    List<dynamic> rawList;
+    try {
+      final response =
+          await _client.get('/recipients/$recipientId/assessments');
+      rawList = response is List<dynamic> ? response : <dynamic>[];
+    } on ApiException catch (e) {
+      // 분석 기록이 없는 대상자는 404 등을 반환할 수 있으므로 빈 목록으로 처리
+      if (e.statusCode == 404) {
+        return <DailyAssessment>[];
+      }
+      rethrow;
+    }
+
+    if (rawList.isEmpty) return <DailyAssessment>[];
 
     final assessmentJsonList = rawList
         .whereType<Map>()

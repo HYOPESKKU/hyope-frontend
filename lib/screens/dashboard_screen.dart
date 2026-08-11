@@ -39,9 +39,11 @@ class DashboardScreen extends StatelessWidget {
   });
 
   // 선택된 날짜가 없으면 최신(오늘) 데이터를 기본으로 보여줌
-  DailyAssessment get displayedAssessment => selectedAssessment ?? assessments.last;
+  DailyAssessment? get displayedAssessment =>
+      selectedAssessment ?? (assessments.isNotEmpty ? assessments.last : null);
 
   DateTime get latestAssessmentDate {
+    if (assessments.isEmpty) return dateOnly(DateTime.now());
     return assessments
         .map((assessment) => dateOnly(assessment.measuredAt))
         .reduce((latest, date) => date.isAfter(latest) ? date : latest);
@@ -57,6 +59,7 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 분석 데이터가 아예 없는 경우: 정보 카드 + 안내 문구만 표시
     if (assessments.isEmpty) {
       return _EmptyDashboard(recipient: recipient);
     }
@@ -66,7 +69,7 @@ class DashboardScreen extends StatelessWidget {
     final cognitiveValues = assessments.map((e) => e.cognitiveScore).toList();
     final emotionValues = assessments.map((e) => e.emotionalStability).toList();
     final physicalRiskValues = assessments.map((e) => e.healthRisk).toList();
-    final current = displayedAssessment;
+    final current = displayedAssessment!;
 
     final metricCards = [
       MetricSummaryCard(
@@ -136,12 +139,8 @@ class DashboardScreen extends StatelessWidget {
                         latestAssessment: current,
                       ),
                       const SizedBox(height: 14),
-                      if (recipient.address != null ||
-                          recipient.hobbies.isNotEmpty ||
-                          recipient.recentEvents.isNotEmpty) ...[
-                        RecipientInfoCard(recipient: recipient),
-                        const SizedBox(height: 14),
-                      ],
+                      RecipientInfoCard(recipient: recipient),
+                      const SizedBox(height: 14),
 
                       // 접이식 캘린더
                       _CollapsibleCalendarHeader(
@@ -190,7 +189,11 @@ class DashboardScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 14),
 
-                      RiskGaugeCard(assessment: current, title: _riskTitle),
+                      RiskGaugeCard(
+                        assessment: current,
+                        title: _riskTitle,
+                        phoneNumber: recipient.phoneNumber,
+                      ),
                       if (current.incompleteCategories.isNotEmpty) ...[
                         const SizedBox(height: 10),
                         IncompleteCategoriesBadge(categories: current.incompleteCategories),
@@ -260,12 +263,8 @@ class _EmptyDashboard extends StatelessWidget {
               children: [
                 HeaderSection(recipient: recipient, latestAssessment: null),
                 const SizedBox(height: 14),
-                if (recipient.address != null ||
-                    recipient.hobbies.isNotEmpty ||
-                    recipient.recentEvents.isNotEmpty) ...[
-                  RecipientInfoCard(recipient: recipient),
-                  const SizedBox(height: 14),
-                ],
+                RecipientInfoCard(recipient: recipient),
+                const SizedBox(height: 14),
                 HyopeCard(
                   child: Column(
                     children: [

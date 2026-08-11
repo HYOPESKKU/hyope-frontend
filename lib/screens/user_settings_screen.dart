@@ -8,12 +8,8 @@ class UserSettingsScreen extends StatelessWidget {
   final UserProfile userProfile;
   final RecipientSummary recipient;
   final CallSchedule? callSchedule;
-  final bool biometricLockEnabled;
-  final bool darkModeEnabled;
   final VoidCallback onEditUserProfile;
   final VoidCallback onEditRecipient;
-  final ValueChanged<bool> onBiometricLockChanged;
-  final ValueChanged<bool> onDarkModeChanged;
   final VoidCallback onLogout;
 
   const UserSettingsScreen({
@@ -22,12 +18,8 @@ class UserSettingsScreen extends StatelessWidget {
     required this.userProfile,
     required this.recipient,
     required this.callSchedule,
-    required this.biometricLockEnabled,
-    required this.darkModeEnabled,
     required this.onEditUserProfile,
     required this.onEditRecipient,
-    required this.onBiometricLockChanged,
-    required this.onDarkModeChanged,
     required this.onLogout,
   });
 
@@ -145,30 +137,6 @@ class UserSettingsScreen extends StatelessWidget {
                       icon: Icons.delete_outline,
                       title: '녹음 보관 기간',
                       value: '30일',
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              HyopeCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SectionTitle(title: '앱 환경'),
-                    const SizedBox(height: 10),
-                    SettingsSwitchTile(
-                      icon: Icons.fingerprint_rounded,
-                      title: '생체 인증 잠금',
-                      subtitle: '앱 실행 시 지문 또는 얼굴 인증 사용',
-                      value: biometricLockEnabled,
-                      onChanged: onBiometricLockChanged,
-                    ),
-                    SettingsSwitchTile(
-                      icon: Icons.dark_mode_outlined,
-                      title: '다크 모드',
-                      subtitle: '어두운 배경의 앱 화면 사용',
-                      value: darkModeEnabled,
-                      onChanged: onDarkModeChanged,
                     ),
                   ],
                 ),

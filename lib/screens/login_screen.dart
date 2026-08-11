@@ -51,7 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final recipients = await RecipientService().findByGuardian(profile.id);
       if (!mounted) return;
 
-      Navigator.of(context).pushReplacement(
+      Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute<void>(
           builder: (_) => RecipientListScreen(
             userRole: widget.selectedRole,
@@ -59,6 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
             recipients: recipients,
           ),
         ),
+        (route) => false,
       );
     } on AuthException catch (e) {
       if (!mounted) return;
