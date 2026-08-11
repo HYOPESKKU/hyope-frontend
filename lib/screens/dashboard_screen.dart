@@ -39,9 +39,11 @@ class DashboardScreen extends StatelessWidget {
   });
 
   // 선택된 날짜가 없으면 최신(오늘) 데이터를 기본으로 보여줌
-  DailyAssessment get displayedAssessment => selectedAssessment ?? assessments.last;
+  DailyAssessment? get displayedAssessment =>
+      selectedAssessment ?? (assessments.isNotEmpty ? assessments.last : null);
 
   DateTime get latestAssessmentDate {
+    if (assessments.isEmpty) return dateOnly(DateTime.now());
     return assessments
         .map((assessment) => dateOnly(assessment.measuredAt))
         .reduce((latest, date) => date.isAfter(latest) ? date : latest);
@@ -57,12 +59,17 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 분석 데이터가 아예 없는 경우: 정보 카드 + 안내 문구만 표시
+    if (assessments.isEmpty) {
+      return _EmptyDashboard(recipient: recipient);
+    }
+
     final metricDates = assessments.map((e) => e.measuredAt).toList();
     final depressionValues = assessments.map((e) => e.depressionScore).toList();
     final cognitiveValues = assessments.map((e) => e.cognitiveScore).toList();
     final emotionValues = assessments.map((e) => e.emotionalStability).toList();
     final physicalRiskValues = assessments.map((e) => e.healthRisk).toList();
-    final current = displayedAssessment;
+    final current = displayedAssessment!;
 
     final metricCards = [
       MetricSummaryCard(
@@ -227,6 +234,94 @@ class DashboardScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _EmptyDashboard extends StatelessWidget {
+  final RecipientSummary recipient;
+
+  const _EmptyDashboard({required this.recipient});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 430),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${recipient.name}님 리포트',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF182033),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    recipient.relation,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      color: Color(0xFF7A8294),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  if (recipient.address != null ||
+                      recipient.hobbies.isNotEmpty ||
+                      recipient.recentEvents.isNotEmpty) ...[
+                    RecipientInfoCard(recipient: recipient),
+                    const SizedBox(height: 18),
+                  ],
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0xFFE7EAF2)),
+                    ),
+                    child: Column(
+                      children: [
+                        const Icon(
+                          Icons.insights_outlined,
+                          size: 40,
+                          color: Color(0xFF9AA2B4),
+                        ),
+                        const SizedBox(height: 14),
+                        const Text(
+                          '아직 분석 데이터가 없습니다',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF182033),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          '통화 일정이 예정대로 진행되면\n분석 결과가 이곳에 표시됩니다.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF7A8294),
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

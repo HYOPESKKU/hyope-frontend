@@ -276,7 +276,9 @@ class DailyAssessment {
       id: _toInt(json['id'] ?? json['assessment_id'] ?? 0),
       recipientId: _toInt(json['recipient_id'] ?? json['recipientId'] ?? 0),
       callLogId: _toInt(json['call_log_id'] ?? json['callLogId'] ?? 0),
-      measuredAt: DateTime.parse(json['measuredAt'] as String),
+      measuredAt: json['measuredAt'] != null
+    ? DateTime.parse(json['measuredAt'] as String)
+    : DateTime.now(),
       depressionScore: _toDouble(json['depressionScore']),
       emotionalStability: _toDouble(json['emotionalStability']),
       healthRisk: _toDouble(json['healthRisk']),
