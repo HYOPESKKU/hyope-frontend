@@ -56,8 +56,6 @@ class _MainScreenState extends State<MainScreen> {
   bool dailyReportEnabled = true;
   bool highRiskOnlyEnabled = false;
   bool guardianCallReminderEnabled = true;
-  bool biometricLockEnabled = false;
-  bool darkModeEnabled = false;
 
   @override
   void initState() {
@@ -315,16 +313,8 @@ Future<void> _markNotificationRead(int id) async {
             userProfile: currentUser,
             recipient: currentRecipient,
             callSchedule: callSchedule,
-            biometricLockEnabled: biometricLockEnabled,
-            darkModeEnabled: darkModeEnabled,
             onEditUserProfile: _editUserProfile,
             onEditRecipient: _editRecipient,
-            onBiometricLockChanged: (value) {
-              setState(() => biometricLockEnabled = value);
-            },
-            onDarkModeChanged: (value) {
-              setState(() => darkModeEnabled = value);
-            },
             onLogout: _logout,
           ),
         ],

@@ -189,7 +189,11 @@ class DashboardScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 14),
 
-                      RiskGaugeCard(assessment: current, title: _riskTitle),
+                      RiskGaugeCard(
+                        assessment: current,
+                        title: _riskTitle,
+                        phoneNumber: recipient.phoneNumber,
+                      ),
                       if (current.incompleteCategories.isNotEmpty) ...[
                         const SizedBox(height: 10),
                         IncompleteCategoriesBadge(categories: current.incompleteCategories),

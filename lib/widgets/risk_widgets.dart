@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/hyope_models.dart';
 import '../painters/hyope_painters.dart';
@@ -7,12 +8,48 @@ import 'common_widgets.dart';
 class RiskGaugeCard extends StatelessWidget {
   final DailyAssessment assessment;
   final String title;
+  final String? phoneNumber;
 
   const RiskGaugeCard({
     super.key,
     required this.assessment,
     this.title = '오늘의 돌봄 위험도',
+    this.phoneNumber,
   });
+
+  Future<void> _makeCall(BuildContext context) async {
+    final number = phoneNumber;
+    if (number == null || number.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('등록된 연락처가 없습니다.')),
+      );
+      return;
+    }
+    final uri = Uri(scheme: 'tel', path: number);
+    final launched = await launchUrl(uri);
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('전화 앱을 열 수 없습니다.')),
+      );
+    }
+  }
+
+  Future<void> _sendMessage(BuildContext context) async {
+    final number = phoneNumber;
+    if (number == null || number.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('등록된 연락처가 없습니다.')),
+      );
+      return;
+    }
+    final uri = Uri(scheme: 'sms', path: number);
+    final launched = await launchUrl(uri);
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('문자 앱을 열 수 없습니다.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,7 +135,7 @@ class RiskGaugeCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: FilledButton.icon(
-                        onPressed: () {},
+                        onPressed: () => _makeCall(context),
                         style: FilledButton.styleFrom(
                           minimumSize: const Size(0, 40),
                           padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -114,7 +151,7 @@ class RiskGaugeCard extends StatelessWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () {},
+                        onPressed: () => _sendMessage(context),
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size(0, 40),
                           padding: const EdgeInsets.symmetric(horizontal: 10),
