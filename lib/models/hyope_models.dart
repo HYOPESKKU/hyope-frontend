@@ -648,12 +648,18 @@ class ConversationMessage {
   }
 }
 
-enum NotificationCategory { callMissed, callFailed }
+enum NotificationCategory { callMissed, callFailed, highRisk, suddenSpike }
 
 NotificationCategory parseNotificationCategory(String value) {
   switch (value.toUpperCase()) {
     case 'CALL_FAILED':
       return NotificationCategory.callFailed;
+    case 'HIGH_RISK':
+      return NotificationCategory.highRisk;
+    case 'SUDDEN_SPIKE':
+      return NotificationCategory.suddenSpike;
+    case 'BOTH':
+      return NotificationCategory.highRisk; // 위험도 초과가 더 급한 정보이므로 highRisk로 표시
     case 'CALL_MISSED':
     default:
       return NotificationCategory.callMissed;

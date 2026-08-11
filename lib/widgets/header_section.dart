@@ -6,11 +6,15 @@ import '../utils/date_utils.dart';
 class HeaderSection extends StatelessWidget {
   final RecipientSummary recipient;
   final DailyAssessment? latestAssessment;
+  final VoidCallback? onNotificationTap;
+  final bool hasUnreadNotification;
 
   const HeaderSection({
     super.key,
     required this.recipient,
     required this.latestAssessment,
+    this.onNotificationTap,
+    this.hasUnreadNotification = false,
   });
 
   @override
@@ -43,21 +47,46 @@ class HeaderSection extends StatelessWidget {
             ],
           ),
         ),
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: Colors.white,
+        Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
             borderRadius: BorderRadius.circular(12),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x12000000),
-                blurRadius: 14,
-                offset: Offset(0, 6),
+            onTap: onNotificationTap,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x12000000),
+                    blurRadius: 14,
+                    offset: Offset(0, 6),
+                  ),
+                ],
               ),
-            ],
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Center(child: Icon(Icons.notifications_none_rounded)),
+                  if (hasUnreadNotification)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Colors.redAccent,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
-          child: const Icon(Icons.notifications_none_rounded),
         ),
       ],
     );

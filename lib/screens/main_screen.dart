@@ -286,13 +286,16 @@ Future<void> _markNotificationRead(int id) async {
               setState(() => isCalendarExpanded = !isCalendarExpanded);
             },
             onMonthChanged: (month) {
-              // 달 이동은 캘린더에 표시되는 월만 변경합니다.
-              // 상세 기록은 사용자가 다른 날짜를 직접 선택할 때까지 유지합니다.
               setState(() => selectedMonth = month);
             },
             onDateSelected: (date) {
               setState(() => selectedDate = date);
             },
+            onNotificationTap: () {
+              setState(() => selectedTabIndex = 2);
+            },
+            hasUnreadNotification:
+                (notifications ?? const []).any((n) => !n.isRead),
           ),
           ConversationLogScreen(recipientId: currentRecipient.id),
           NotificationSettingsScreen(

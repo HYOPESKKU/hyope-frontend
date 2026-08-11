@@ -22,6 +22,8 @@ class DashboardScreen extends StatelessWidget {
   final VoidCallback onToggleCalendarExpanded;
   final ValueChanged<DateTime> onMonthChanged;
   final ValueChanged<DateTime> onDateSelected;
+  final VoidCallback? onNotificationTap;
+  final bool hasUnreadNotification;
 
   const DashboardScreen({
     super.key,
@@ -36,6 +38,8 @@ class DashboardScreen extends StatelessWidget {
     required this.onToggleCalendarExpanded,
     required this.onMonthChanged,
     required this.onDateSelected,
+    this.onNotificationTap,
+    this.hasUnreadNotification = false,
   });
 
   // 선택된 날짜가 없으면 최신(오늘) 데이터를 기본으로 보여줌
@@ -61,7 +65,11 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // 분석 데이터가 아예 없는 경우: 정보 카드 + 안내 문구만 표시
     if (assessments.isEmpty) {
-      return _EmptyDashboard(recipient: recipient);
+      return _EmptyDashboard(
+        recipient: recipient,
+        onNotificationTap: onNotificationTap,
+        hasUnreadNotification: hasUnreadNotification,
+      );
     }
 
     final metricDates = assessments.map((e) => e.measuredAt).toList();
@@ -143,6 +151,8 @@ class DashboardScreen extends StatelessWidget {
                       HeaderSection(
                         recipient: recipient,
                         latestAssessment: current,
+                        onNotificationTap: onNotificationTap,
+                        hasUnreadNotification: hasUnreadNotification,
                       ),
                       const SizedBox(height: 14),
                       RecipientInfoCard(recipient: recipient),
@@ -253,8 +263,14 @@ class DashboardScreen extends StatelessWidget {
 // (assessments가 비어 있으면 .last/.reduce가 예외를 던지는 위 build()의 계산들을 아예 스킵한다)
 class _EmptyDashboard extends StatelessWidget {
   final RecipientSummary recipient;
+  final VoidCallback? onNotificationTap;
+  final bool hasUnreadNotification;
 
-  const _EmptyDashboard({required this.recipient});
+  const _EmptyDashboard({
+    required this.recipient,
+    this.onNotificationTap,
+    this.hasUnreadNotification = false,
+  });
 
   @override
   Widget build(BuildContext context) {
