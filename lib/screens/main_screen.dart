@@ -97,6 +97,9 @@ Future<void> _loadAssessments() async {
       }
       selectedDate = null;
     });
+  } on NetworkException catch (e) {
+    if (!mounted) return;
+    setState(() => loadError = e.message);
   } on ApiException catch (e) {
     if (!mounted) return;
     setState(() => loadError = e.message);

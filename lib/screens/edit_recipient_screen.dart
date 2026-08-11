@@ -165,6 +165,11 @@ class _EditRecipientScreenState extends State<EditRecipientScreen> {
 
       if (!mounted) return;
       Navigator.of(context).pop(updated);
+    } on NetworkException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
