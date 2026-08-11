@@ -337,12 +337,18 @@ class _AverageScoresCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 측정된 날만 평균에 넣는다. 통화가 실패했거나 답을 못 받은 날의 점수는
+    // 측정값이 아니라 기본값(placeholder 0.5, 무응답 5.0)이라, 그대로 섞으면
+    // 주간·월간 평균이 실제보다 좋거나 나쁘게 나온다.
+    final measured = data.where((a) => a.isMeasured).toList();
+    final source = measured.isEmpty ? data : measured;
+
     final items = [
-      ('종합 위험도', _avg(data.map((a) => a.overallRisk)), const Color(0xFF4F80FF)),
-      ('우울 지표', _avg(data.map((a) => a.depressionScore)), const Color(0xFF8A6DFF)),
-      ('인지 지표', _avg(data.map((a) => a.cognitiveScore)), const Color(0xFF2FB86E)),
-      ('정서 지표', _avg(data.map((a) => a.emotionalStability)), const Color(0xFF6D7CFF)),
-      ('신체 위험', _avg(data.map((a) => a.healthRisk)), const Color(0xFFFF8A3D)),
+      ('종합 위험도', _avg(source.map((a) => a.overallRisk)), const Color(0xFF4F80FF)),
+      ('우울 지표', _avg(source.map((a) => a.depressionScore)), const Color(0xFF8A6DFF)),
+      ('인지 지표', _avg(source.map((a) => a.cognitiveScore)), const Color(0xFF2FB86E)),
+      ('정서 지표', _avg(source.map((a) => a.emotionalStability)), const Color(0xFF6D7CFF)),
+      ('신체 위험', _avg(source.map((a) => a.healthRisk)), const Color(0xFFFF8A3D)),
     ];
 
     return HyopeCard(
@@ -399,7 +405,10 @@ class _TrendCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final values = data.map((a) => a.overallRisk).toList();
+    // 측정 못 한 날은 null로 넘겨 그래프에서 선을 끊는다.
+    // 기본값(placeholder 0.5, 무응답 5.0)을 실측처럼 이으면 오해를 부른다.
+    final values =
+        data.map((a) => a.isMeasured ? a.overallRisk : null).toList();
 
     final xLabels = period == ReportPeriod.weekly
         ? data.map((a) => '${a.measuredAt.month}/${a.measuredAt.day}').toList()
@@ -461,7 +470,13 @@ class _HighlightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sorted = [...data]..sort((a, b) => b.overallRisk.compareTo(a.overallRisk));
+    // 측정된 날 중에서 고른다. 무응답 날은 점수가 기본값 5.0이라 실제로
+    // 위험했던 날보다 위로 올라올 수 있고, 그러면 "이 날 조심하세요"가
+    // 엉뚱한 날을 가리킨다.
+    final measured = data.where((a) => a.isMeasured).toList();
+    final source = measured.isEmpty ? data : measured;
+    final sorted = [...source]
+      ..sort((a, b) => b.overallRisk.compareTo(a.overallRisk));
     final highest = sorted.first;
 
     return HyopeCard(

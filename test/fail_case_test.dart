@@ -106,4 +106,78 @@ void main() {
       );
     });
   });
+
+  _measuredTests();
+}
+
+// ---------------------------------------------------------------------------
+// 측정 여부 판별 — 그래프·평균·최고위험일이 미측정 날을 빼는 근거
+// ---------------------------------------------------------------------------
+
+DailyAssessment _assessment({
+  DateTime? measuredAt,
+  double score = 6.0,
+  List<String> incomplete = const [],
+}) =>
+    DailyAssessment(
+      id: 1,
+      recipientId: 1,
+      callLogId: 1,
+      measuredAt: measuredAt ?? DateTime(2026, 8, 11, 9),
+      depressionScore: score,
+      emotionalStability: score,
+      healthRisk: score,
+      cognitiveScore: score,
+      overallRisk: score,
+      riskLevel: RiskLevel.caution,
+      summary: '',
+      recommendation: '',
+      adherenceRecords: const [],
+      incompleteCategories: incomplete,
+    );
+
+void _measuredTests() {
+  group('DailyAssessment.isMeasured', () {
+    test('정상 기록은 측정된 것으로 본다', () {
+      expect(_assessment().isMeasured, isTrue);
+    });
+
+    test('점수가 전부 0.5면 placeholder다 (채점 서비스 미연결)', () {
+      final a = _assessment(score: 0.5);
+      expect(a.isPlaceholder, isTrue);
+      expect(a.isMeasured, isFalse);
+    });
+
+    test('날짜가 epoch면 미측정이다 (발신 실패)', () {
+      final a = _assessment(measuredAt: DateTime.fromMillisecondsSinceEpoch(0));
+      expect(a.hasNoDate, isTrue);
+      expect(a.isMeasured, isFalse);
+    });
+
+    test('미완료 카테고리가 있으면 미측정이다 (무응답)', () {
+      final a = _assessment(incomplete: const ['우울']);
+      expect(a.isMeasured, isFalse);
+    });
+
+    test('점수 0.5가 하나뿐이면 placeholder가 아니다', () {
+      // 다섯 지표가 모두 정확히 0.5일 때만 placeholder로 본다.
+      final a = DailyAssessment(
+        id: 1,
+        recipientId: 1,
+        callLogId: 1,
+        measuredAt: DateTime(2026, 8, 11, 9),
+        depressionScore: 0.5,
+        emotionalStability: 7.0,
+        healthRisk: 3.0,
+        cognitiveScore: 8.0,
+        overallRisk: 2.0,
+        riskLevel: RiskLevel.observe,
+        summary: '',
+        recommendation: '',
+        adherenceRecords: const [],
+      );
+      expect(a.isPlaceholder, isFalse);
+      expect(a.isMeasured, isTrue);
+    });
+  });
 }

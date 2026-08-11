@@ -88,6 +88,20 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 통화가 끊기거나 어르신이 답을 안 하면 answer가 빈 문자열로 온다
+    // (ConversationMessage.fromJson의 `?? ''`). 그대로 두면 속이 빈 파란
+    // 말풍선이 떠서, 보호자는 답을 안 하신 건지 앱이 잘못된 건지 구분할 수
+    // 없다. 무응답임을 글로 밝힌다.
+    final isMissing = text.trim().isEmpty;
+    final label = isMissing ? (isAi ? '(질문 없음)' : '(응답 없음)') : text;
+
+    final background = isMissing
+        ? const Color(0xFFF2F4F8)
+        : (isAi ? const Color(0xFFEFF1F6) : const Color(0xFF4F80FF));
+    final foreground = isMissing
+        ? const Color(0xFF9AA2B4)
+        : (isAi ? Colors.black87 : Colors.white);
+
     return Align(
       alignment: isAi ? Alignment.centerLeft : Alignment.centerRight,
       child: Container(
@@ -95,12 +109,17 @@ class _MessageBubble extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         constraints: const BoxConstraints(maxWidth: 280),
         decoration: BoxDecoration(
-          color: isAi ? const Color(0xFFEFF1F6) : const Color(0xFF4F80FF),
+          color: background,
           borderRadius: BorderRadius.circular(16),
+          border:
+              isMissing ? Border.all(color: const Color(0xFFDDE2EC)) : null,
         ),
         child: Text(
-          text,
-          style: TextStyle(color: isAi ? Colors.black87 : Colors.white),
+          label,
+          style: TextStyle(
+            color: foreground,
+            fontStyle: isMissing ? FontStyle.italic : FontStyle.normal,
+          ),
         ),
       ),
     );

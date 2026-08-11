@@ -405,7 +405,9 @@ class LineChartPainter extends CustomPainter {
 }
 
 class AxisLineChartPainter extends CustomPainter {
-  final List<double> values;
+  /// null은 그 날 측정이 안 됐다는 뜻이다(DailyAssessment.isMeasured).
+  /// 선을 끊고 x축 위 회색 빈 점으로 그린다.
+  final List<double?> values;
   final List<String> xLabels;
   final Color color;
 
@@ -417,8 +419,13 @@ class AxisLineChartPainter extends CustomPainter {
 
   // 데이터 범위에 맞춰 y축 최소/최대값을 0.5 단위로 계산 (여유값 포함)
   (double, double) get _yRange {
-    final minValue = values.reduce((a, b) => a < b ? a : b);
-    final maxValue = values.reduce((a, b) => a > b ? a : b);
+    // 측정된 값만으로 범위를 잡는다. 미측정 지점(null)을 0으로 취급하면
+    // y축이 불필요하게 넓어져 실제 변화가 납작하게 보인다.
+    final measured = values.whereType<double>().toList();
+    if (measured.isEmpty) return (0.0, 10.0);
+
+    final minValue = measured.reduce((a, b) => a < b ? a : b);
+    final maxValue = measured.reduce((a, b) => a > b ? a : b);
 
     double yMin = (((minValue - 0.7) / 0.5).floor() * 0.5);
     double yMax = (((maxValue + 0.7) / 0.5).ceil() * 0.5);
@@ -489,34 +496,57 @@ class AxisLineChartPainter extends CustomPainter {
       );
     }
 
-    // 라인
+    // 라인 — 측정된 구간만 이어 그린다. 미측정 지점에서 끊어 별개 구간으로
+    // 나눈다. 채우기도 구간별로 따로 그려야 끊긴 자리가 메워지지 않는다.
     final path = Path();
-    final points = <Offset>[];
+    final points = <Offset?>[];
+    final segments = <List<Offset>>[];
+    var current = <Offset>[];
+
     for (int i = 0; i < values.length; i++) {
       final x = chartLeft + (chartRight - chartLeft) * i / (values.length - 1);
-      final normalized = ((values[i] - yMin) / (yMax - yMin)).clamp(0.0, 1.0);
+      final value = values[i];
+
+      if (value == null) {
+        points.add(null);
+        if (current.length > 1) segments.add(current);
+        current = <Offset>[];
+        continue;
+      }
+
+      final normalized = ((value - yMin) / (yMax - yMin)).clamp(0.0, 1.0);
       final y = chartBottom - normalized * (chartBottom - chartTop);
-      points.add(Offset(x, y));
-      if (i == 0) {
+      final point = Offset(x, y);
+      points.add(point);
+
+      if (current.isEmpty) {
         path.moveTo(x, y);
       } else {
         path.lineTo(x, y);
       }
+      current.add(point);
     }
+    if (current.length > 1) segments.add(current);
 
-    final fillPath = Path.from(path)
-      ..lineTo(points.last.dx, chartBottom)
-      ..lineTo(points.first.dx, chartBottom)
-      ..close();
-    canvas.drawPath(
-      fillPath,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [color.withOpacity(0.16), color.withOpacity(0.0)],
-        ).createShader(Rect.fromLTWH(chartLeft, chartTop, chartRight - chartLeft, chartBottom - chartTop)),
+    final fillShader = LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [color.withOpacity(0.16), color.withOpacity(0.0)],
+    ).createShader(
+      Rect.fromLTWH(chartLeft, chartTop, chartRight - chartLeft, chartBottom - chartTop),
     );
+
+    for (final segment in segments) {
+      final fillPath = Path()..moveTo(segment.first.dx, segment.first.dy);
+      for (final p in segment.skip(1)) {
+        fillPath.lineTo(p.dx, p.dy);
+      }
+      fillPath
+        ..lineTo(segment.last.dx, chartBottom)
+        ..lineTo(segment.first.dx, chartBottom)
+        ..close();
+      canvas.drawPath(fillPath, Paint()..shader = fillShader);
+    }
 
     canvas.drawPath(
       path,
@@ -529,7 +559,19 @@ class AxisLineChartPainter extends CustomPainter {
     );
 
     for (final p in points) {
-      canvas.drawCircle(p, 2.6, Paint()..color = color);
+      if (p != null) canvas.drawCircle(p, 2.6, Paint()..color = color);
+    }
+
+    // 미측정 지점은 x축 위 회색 빈 점으로 남긴다. 아무 표시도 없으면 그 날
+    // 통화가 없었는지 화면 오류인지 구분이 안 된다.
+    final missingPaint = Paint()
+      ..color = const Color(0xFFC7CDDA)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4;
+    for (int i = 0; i < points.length; i++) {
+      if (points[i] != null) continue;
+      final x = chartLeft + (chartRight - chartLeft) * i / (values.length - 1);
+      canvas.drawCircle(Offset(x, chartBottom - 4), 2.8, missingPaint);
     }
   }
 
