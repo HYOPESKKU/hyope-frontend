@@ -139,12 +139,8 @@ class DashboardScreen extends StatelessWidget {
                         latestAssessment: current,
                       ),
                       const SizedBox(height: 14),
-                      if (recipient.address != null ||
-                          recipient.hobbies.isNotEmpty ||
-                          recipient.recentEvents.isNotEmpty) ...[
-                        RecipientInfoCard(recipient: recipient),
-                        const SizedBox(height: 14),
-                      ],
+                      RecipientInfoCard(recipient: recipient),
+                      const SizedBox(height: 14),
 
                       // 접이식 캘린더
                       _CollapsibleCalendarHeader(
@@ -263,12 +259,8 @@ class _EmptyDashboard extends StatelessWidget {
               children: [
                 HeaderSection(recipient: recipient, latestAssessment: null),
                 const SizedBox(height: 14),
-                if (recipient.address != null ||
-                    recipient.hobbies.isNotEmpty ||
-                    recipient.recentEvents.isNotEmpty) ...[
-                  RecipientInfoCard(recipient: recipient),
-                  const SizedBox(height: 14),
-                ],
+                RecipientInfoCard(recipient: recipient),
+                const SizedBox(height: 14),
                 HyopeCard(
                   child: Column(
                     children: [
