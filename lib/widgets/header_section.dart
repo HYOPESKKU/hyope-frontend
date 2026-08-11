@@ -5,7 +5,7 @@ import '../utils/date_utils.dart';
 
 class HeaderSection extends StatelessWidget {
   final RecipientSummary recipient;
-  final DailyAssessment latestAssessment;
+  final DailyAssessment? latestAssessment;
 
   const HeaderSection({
     super.key,
@@ -31,7 +31,9 @@ class HeaderSection extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                '${recipient.relation} · 마지막 분석 ${formatDateTime(latestAssessment.measuredAt)}',
+                latestAssessment == null
+                    ? '${recipient.relation} · 아직 분석 기록이 없어요'
+                    : '${recipient.relation} · 마지막 분석 ${formatDateTime(latestAssessment!.measuredAt)}',
                 style: const TextStyle(
                   fontSize: 12.5,
                   color: Color(0xFF7A8294),

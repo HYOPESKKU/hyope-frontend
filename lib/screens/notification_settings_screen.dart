@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../models/hyope_models.dart';
+import '../utils/date_utils.dart';
 import '../widgets/common_widgets.dart';
 
 class NotificationSettingsScreen extends StatelessWidget {
+  final List<GuardianNotification> notifications;
+  final ValueChanged<int> onMarkRead;
   final bool smsAlertEnabled;
   final bool pushAlertEnabled;
   final bool dailyReportEnabled;
@@ -16,6 +20,8 @@ class NotificationSettingsScreen extends StatelessWidget {
 
   const NotificationSettingsScreen({
     super.key,
+    required this.notifications,
+    required this.onMarkRead,
     required this.smsAlertEnabled,
     required this.pushAlertEnabled,
     required this.dailyReportEnabled,
@@ -43,6 +49,36 @@ class NotificationSettingsScreen extends StatelessWidget {
                 icon: Icons.notifications_none_rounded,
               ),
               const SizedBox(height: 14),
+              HyopeCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionTitle(title: '최근 알림'),
+                    const SizedBox(height: 10),
+                    if (notifications.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 6),
+                        child: Text(
+                          '받은 알림이 없습니다.',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF9AA2B4),
+                          ),
+                        ),
+                      )
+                    else
+                      for (final n in notifications) ...[
+                        _NotificationTile(
+                          notification: n,
+                          onTap: () => onMarkRead(n.id),
+                        ),
+                        if (n != notifications.last) const SizedBox(height: 6),
+                      ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
               HyopeCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,6 +141,66 @@ class NotificationSettingsScreen extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NotificationTile extends StatelessWidget {
+  final GuardianNotification notification;
+  final VoidCallback onTap;
+
+  const _NotificationTile({required this.notification, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final unread = !notification.isRead;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 5),
+              child: Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: unread ? const Color(0xFFE5484D) : const Color(0xFFD5D9E3),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    notification.message,
+                    style: TextStyle(
+                      fontSize: 12.8,
+                      fontWeight: unread ? FontWeight.w800 : FontWeight.w600,
+                      color: unread ? const Color(0xFF1F2430) : const Color(0xFF6B7280),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    formatDateTime(notification.createdAt),
+                    style: const TextStyle(
+                      fontSize: 10.8,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF9AA2B4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -4,6 +4,8 @@ import '../models/hyope_models.dart';
 import '../services/api_client.dart';
 import '../services/assessment_service.dart';
 import '../services/auth_service.dart';
+import '../services/call_schedule_service.dart';
+import '../services/notification_service.dart';
 import '../services/recipient_service.dart';
 import '../utils/adherence_utils.dart';
 import '../utils/date_utils.dart';
@@ -38,8 +40,10 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   List<DailyAssessment>? assessments;
+  CallSchedule? callSchedule;
+  List<GuardianNotification>? notifications;
   String? loadError;
-  late DateTime selectedMonth;
+  DateTime selectedMonth = DateTime.now();
   late UserProfile currentUser;
   late RecipientSummary currentRecipient;
   DateTime? selectedDate;
@@ -76,13 +80,19 @@ Future<void> _loadAssessments() async {
     final results = await Future.wait([
       AssessmentService().findByRecipient(currentRecipient.id),
       RecipientService().readRecipient(currentRecipient.id),
+      CallScheduleService().findByRecipient(currentRecipient.id),
+      NotificationService().fetchMine(),
     ]);
     final result = results[0] as List<DailyAssessment>;
     final refreshedRecipient = results[1] as RecipientSummary;
+    final schedules = results[2] as List<CallSchedule>;
+    final fetchedNotifications = results[3] as List<GuardianNotification>;
     if (!mounted) return;
     setState(() {
       assessments = result;
       currentRecipient = refreshedRecipient;
+      callSchedule = schedules.isEmpty ? null : schedules.first;
+      notifications = fetchedNotifications;
       if (result.isNotEmpty) {
         final latestDate = dateOnly(result.last.measuredAt);
         selectedMonth = DateTime(latestDate.year, latestDate.month);
@@ -95,6 +105,33 @@ Future<void> _loadAssessments() async {
   } catch (_) {
     if (!mounted) return;
     setState(() => loadError = '데이터를 불러오지 못했습니다.');
+  }
+}
+
+Future<void> _refreshCallSchedule() async {
+  try {
+    final schedules =
+        await CallScheduleService().findByRecipient(currentRecipient.id);
+    if (!mounted) return;
+    setState(() => callSchedule = schedules.isEmpty ? null : schedules.first);
+  } catch (_) {
+    // 표시용 정보라 실패해도 조용히 무시 — 기존 값을 그대로 둔다.
+  }
+}
+
+Future<void> _markNotificationRead(int id) async {
+  final current = notifications;
+  if (current == null) return;
+  setState(() {
+    notifications = [
+      for (final n in current)
+        if (n.id == id) n.copyWith(isRead: true) else n,
+    ];
+  });
+  try {
+    await NotificationService().markRead(id);
+  } catch (_) {
+    // 낙관적 갱신 실패해도 조용히 무시 — 다음 로드 때 서버 상태로 다시 맞춰진다.
   }
 }
 
@@ -133,6 +170,8 @@ Future<void> _loadAssessments() async {
 
     setState(() => currentRecipient = updated);
     widget.onRecipientChanged?.call(updated);
+    await _refreshCallSchedule();
+    if (!mounted) return;
     _showSavedMessage('피보호자 정보가 수정되었습니다.');
   }
 
@@ -226,13 +265,6 @@ Future<void> _loadAssessments() async {
       );
     }
 
-    if (list.isEmpty) {
-      return Scaffold(
-        appBar: appBar,
-        body: const Center(child: Text('아직 분석 데이터가 없습니다.')),
-      );
-    }
-
     return Scaffold(
       appBar: appBar,
       body: IndexedStack(
@@ -263,6 +295,8 @@ Future<void> _loadAssessments() async {
           ),
           ConversationLogScreen(recipientId: currentRecipient.id),
           NotificationSettingsScreen(
+            notifications: notifications ?? const [],
+            onMarkRead: _markNotificationRead,
             smsAlertEnabled: smsAlertEnabled,
             pushAlertEnabled: pushAlertEnabled,
             dailyReportEnabled: dailyReportEnabled,
@@ -280,6 +314,7 @@ Future<void> _loadAssessments() async {
             userRole: widget.userRole,
             userProfile: currentUser,
             recipient: currentRecipient,
+            callSchedule: callSchedule,
             biometricLockEnabled: biometricLockEnabled,
             darkModeEnabled: darkModeEnabled,
             onEditUserProfile: _editUserProfile,
@@ -299,23 +334,29 @@ Future<void> _loadAssessments() async {
         onDestinationSelected: (index) {
           setState(() => selectedTabIndex = index);
         },
-        destinations: const [
-          NavigationDestination(
+        destinations: [
+          const NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
             selectedIcon: Icon(Icons.dashboard_rounded),
             label: '대시보드',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.chat_bubble_outline_rounded),
             selectedIcon: Icon(Icons.chat_bubble_rounded),
             label: '대화내역',
           ),
           NavigationDestination(
-            icon: Icon(Icons.notifications_none_rounded),
-            selectedIcon: Icon(Icons.notifications_rounded),
+            icon: Badge(
+              isLabelVisible: (notifications ?? const []).any((n) => !n.isRead),
+              child: const Icon(Icons.notifications_none_rounded),
+            ),
+            selectedIcon: Badge(
+              isLabelVisible: (notifications ?? const []).any((n) => !n.isRead),
+              child: const Icon(Icons.notifications_rounded),
+            ),
             label: '알림설정',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.manage_accounts_outlined),
             selectedIcon: Icon(Icons.manage_accounts_rounded),
             label: '내 정보',
