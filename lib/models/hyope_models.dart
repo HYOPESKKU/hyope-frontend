@@ -328,7 +328,7 @@ class DailyAssessment {
       id: _toInt(json['id'] ?? json['assessment_id'] ?? 0),
       recipientId: _toInt(json['recipient_id'] ?? json['recipientId'] ?? 0),
       callLogId: _toInt(json['call_log_id'] ?? json['callLogId'] ?? 0),
-      measuredAt: DateTime.parse(json['measuredAt'] as String),
+      measuredAt: _toDate(json['measuredAt'] ?? json['measured_at']),
       depressionScore: _toDouble(json['depressionScore']),
       emotionalStability: _toDouble(json['emotionalStability']),
       healthRisk: _toDouble(json['healthRisk']),
@@ -465,6 +465,30 @@ double _toDouble(dynamic value) {
   return double.tryParse(value?.toString() ?? '') ?? 0.0;
 }
 
+/// 날짜를 안전하게 파싱한다. null·빈 값·형식 오류면 null을 돌려준다.
+///
+/// 통화가 실패하거나 어르신이 답을 안 하면 백엔드가 날짜 없이 결과를 보낸다.
+/// 채점 서비스가 연결되기 전에는 measured_at이 null로 나가기도 한다.
+/// 예전에는 `DateTime.parse(json['measuredAt'] as String)`이 그대로 예외를
+/// 던졌는데, 목록을 Future.wait으로 묶어 받는 구조라 항목 하나가 깨지면
+/// 화면 전체가 오류가 됐다.
+DateTime? _toDateOrNull(dynamic value) {
+  if (value is DateTime) return value;
+  final text = value?.toString().trim();
+  if (text == null || text.isEmpty || text == 'null') return null;
+  return DateTime.tryParse(text);
+}
+
+/// 날짜가 반드시 필요한 자리용. 없으면 [fallback], 그것도 없으면 epoch를 쓴다.
+///
+/// epoch(1970-01-01)를 쓰는 이유: 화면이 날짜순으로 정렬하는데, 날짜를
+/// 못 읽은 항목을 현재 시각으로 채우면 최신 기록인 척 맨 위에 올라온다.
+/// epoch면 맨 뒤로 밀려 오해를 부르지 않는다.
+DateTime _toDate(dynamic value, {DateTime? fallback}) =>
+    _toDateOrNull(value) ??
+    fallback ??
+    DateTime.fromMillisecondsSinceEpoch(0);
+
 bool _toBool(dynamic value) {
   if (value is bool) return value;
   if (value is num) return value != 0;
@@ -564,10 +588,8 @@ class ConversationLog {
     return ConversationLog(
       id: _toInt(json['id']),
       recipientId: _toInt(json['recipient_id'] ?? json['recipientId']),
-      startedAt: DateTime.parse(json['startedAt'] as String),
-      endedAt: json['endedAt'] == null
-          ? null
-          : DateTime.parse(json['endedAt'] as String),
+      startedAt: _toDate(json['startedAt'] ?? json['started_at']),
+      endedAt: _toDateOrNull(json['endedAt'] ?? json['ended_at']),
       durationSec: _toInt(json['durationSec']),
       status: parseCallStatus(json['status'] as String? ?? 'ANALYZING'),
     );
@@ -595,7 +617,7 @@ class ConversationMessage {
       sequence: _toInt(json['sequence']),
       question: json['question'] as String? ?? '',
       answer: json['answer'] as String? ?? '',
-      askedAt: DateTime.parse(json['askedAt'] as String),
+      askedAt: _toDate(json['askedAt'] ?? json['asked_at']),
     );
   }
 }
@@ -647,7 +669,7 @@ class GuardianNotification {
       type: parseNotificationCategory(json['type'] as String? ?? 'CALL_MISSED'),
       message: json['message'] as String? ?? '',
       isRead: json['isRead'] as bool? ?? json['is_read'] as bool? ?? false,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: _toDate(json['createdAt'] ?? json['created_at']),
     );
   }
 }
