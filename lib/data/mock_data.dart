@@ -194,4 +194,80 @@ class MockData {
       ),
     ];
   }
+
+  /// 통화가 정상적으로 안 끝난 날들을 섞은 목록.
+  ///
+  /// 정상 데이터만으로는 fail case를 확인할 수 없다. 백엔드는 통화가 실패해도
+  /// 결과를 보내는데, 그때 값이 이렇게 들어온다.
+  ///   - 채점 서비스 미연결: 모든 점수 0.5, risk_level "LOW"
+  ///   - 무응답: 점수는 나오지만 판정이 "알수없음"이라 요약이 비어 있음
+  ///   - 발신 실패: 날짜조차 없음 (파싱 단계에서 epoch로 대체됨)
+  static List<DailyAssessment> withFailCases({int recipientId = 1}) {
+    final base = last30Days(recipientId: recipientId);
+    if (base.length < 4) return base;
+
+    final today = DateTime.now();
+    DateTime dayAgo(int n) =>
+        DateTime(today.year, today.month, today.day, 7, 4)
+            .subtract(Duration(days: n));
+
+    // 어제 — 채점 서비스가 아직 안 붙었을 때 나가는 placeholder
+    final placeholder = DailyAssessment(
+      id: recipientId * 100 + 901,
+      recipientId: recipientId,
+      callLogId: recipientId * 100 + 901,
+      measuredAt: dayAgo(1),
+      depressionScore: 0.5,
+      emotionalStability: 0.5,
+      healthRisk: 0.5,
+      cognitiveScore: 0.5,
+      overallRisk: 0.5,
+      riskLevel: RiskLevel.observe,
+      summary: '채점 미연동 — placeholder 값입니다.',
+      recommendation: '채점 서비스 연동 후 재확인 필요.',
+      adherenceRecords: const [],
+    );
+
+    // 이틀 전 — 어르신이 대부분 답을 안 함
+    final noAnswer = DailyAssessment(
+      id: recipientId * 100 + 902,
+      recipientId: recipientId,
+      callLogId: recipientId * 100 + 902,
+      measuredAt: dayAgo(2),
+      depressionScore: 5.0,
+      emotionalStability: 5.0,
+      healthRisk: 5.0,
+      cognitiveScore: 5.0,
+      overallRisk: 5.0,
+      riskLevel: RiskLevel.caution,
+      summary: '',
+      recommendation: '',
+      adherenceRecords: const [],
+      incompleteCategories: const ['우울', '불안', '인지기능'],
+    );
+
+    // 사흘 전 — 발신 자체가 실패해 날짜가 없던 기록(파싱에서 epoch로 대체)
+    final noDate = DailyAssessment(
+      id: recipientId * 100 + 903,
+      recipientId: recipientId,
+      callLogId: recipientId * 100 + 903,
+      measuredAt: DateTime.fromMillisecondsSinceEpoch(0),
+      depressionScore: 0,
+      emotionalStability: 0,
+      healthRisk: 0,
+      cognitiveScore: 0,
+      overallRisk: 0,
+      riskLevel: RiskLevel.observe,
+      summary: '',
+      recommendation: '',
+      adherenceRecords: const [],
+    );
+
+    final result = [...base]
+      ..removeWhere((a) =>
+          a.measuredAt.day == dayAgo(1).day || a.measuredAt.day == dayAgo(2).day)
+      ..addAll([placeholder, noAnswer, noDate])
+      ..sort((a, b) => a.measuredAt.compareTo(b.measuredAt));
+    return result;
+  }
 }
