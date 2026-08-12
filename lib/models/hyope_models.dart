@@ -668,7 +668,7 @@ class ConversationMessage {
   }
 }
 
-enum NotificationCategory { callMissed, callFailed, highRisk, suddenSpike }
+enum NotificationCategory { callMissed, callFailed, highRisk, suddenSpike, incompleteAnalysis }
 
 NotificationCategory parseNotificationCategory(String value) {
   switch (value.toUpperCase()) {
@@ -678,8 +678,10 @@ NotificationCategory parseNotificationCategory(String value) {
       return NotificationCategory.highRisk;
     case 'SUDDEN_SPIKE':
       return NotificationCategory.suddenSpike;
+    case 'INCOMPLETE_ANALYSIS':
+      return NotificationCategory.incompleteAnalysis;
     case 'BOTH':
-      return NotificationCategory.highRisk; // 위험도 초과가 더 급한 정보이므로 highRisk로 표시
+      return NotificationCategory.highRisk;
     case 'CALL_MISSED':
     default:
       return NotificationCategory.callMissed;
