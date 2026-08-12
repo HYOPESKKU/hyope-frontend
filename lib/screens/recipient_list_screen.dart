@@ -41,6 +41,10 @@ class _RecipientListScreenState extends State<RecipientListScreen> {
     setState(() => recipients[index] = updated);
   }
 
+  void _removeRecipient(int id) {
+    setState(() => recipients.removeWhere((item) => item.id == id));
+  }
+
   Future<void> _addRecipient() async {
     final created = await Navigator.of(context).push<RecipientSummary>(
       MaterialPageRoute<RecipientSummary>(
@@ -130,6 +134,7 @@ class _RecipientListScreenState extends State<RecipientListScreen> {
                           setState(() => userProfile = updated);
                         },
                         onRecipientChanged: _updateRecipient,
+                        onRecipientDeleted: _removeRecipient,
                       );
                     },
                   ),
@@ -275,6 +280,7 @@ class _RecipientCard extends StatelessWidget {
   final UserProfile userProfile;
   final ValueChanged<UserProfile> onUserProfileChanged;
   final ValueChanged<RecipientSummary> onRecipientChanged;
+  final ValueChanged<int> onRecipientDeleted;
 
   const _RecipientCard({
     super.key,
@@ -283,6 +289,7 @@ class _RecipientCard extends StatelessWidget {
     required this.userProfile,
     required this.onUserProfileChanged,
     required this.onRecipientChanged,
+    required this.onRecipientDeleted,
   });
 
   @override
@@ -301,6 +308,7 @@ class _RecipientCard extends StatelessWidget {
                 recipient: recipient,
                 onUserProfileChanged: onUserProfileChanged,
                 onRecipientChanged: onRecipientChanged,
+                onRecipientDeleted: onRecipientDeleted,
               ),
             ),
           );

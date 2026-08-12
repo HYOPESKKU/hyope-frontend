@@ -183,6 +183,53 @@ class _EditRecipientScreenState extends State<EditRecipientScreen> {
     }
   }
 
+  Future<void> _deleteRecipient() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('피보호자 삭제'),
+        content: Text(
+          '${widget.recipient.lastName}${widget.recipient.firstName}님의 정보를 삭제하시겠습니까?\n'
+          '통화 기록, 분석 결과 등 관련된 모든 데이터가 함께 삭제되며 되돌릴 수 없습니다.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFE5484D),
+            ),
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isSaving = true);
+    try {
+      await RecipientService().deleteRecipient(widget.recipient.id);
+      if (!mounted) return;
+      Navigator.of(context).pop('deleted');
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('삭제에 실패했습니다. 네트워크를 확인해주세요.')),
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final relationLabel = widget.userRole == AppUserRole.socialWorker
@@ -415,6 +462,24 @@ class _EditRecipientScreenState extends State<EditRecipientScreen> {
                     label: const Text('변경사항 저장'),
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(52),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: _isSaving ? null : _deleteRecipient,
+                    icon: const Icon(Icons.delete_outline_rounded),
+                    label: const Text('피보호자 삭제'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                      foregroundColor: const Color(0xFFE5484D),
+                      side: const BorderSide(color: Color(0xFFE5484D)),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),

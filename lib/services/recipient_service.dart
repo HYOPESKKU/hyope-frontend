@@ -85,6 +85,10 @@ class RecipientService {
     );
   }
 
+  Future<void> deleteRecipient(int id) async {
+    await _client.delete('/recipients/$id');
+  }
+
   String relationLabel(String relationType) {
     switch (relationType) {
       case 'CHILD':

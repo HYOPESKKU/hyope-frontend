@@ -24,6 +24,7 @@ class MainScreen extends StatefulWidget {
   final UserProfile? userProfile;
   final ValueChanged<UserProfile>? onUserProfileChanged;
   final ValueChanged<RecipientSummary>? onRecipientChanged;
+  final ValueChanged<int>? onRecipientDeleted;
 
   const MainScreen({
     super.key,
@@ -32,6 +33,7 @@ class MainScreen extends StatefulWidget {
     this.userProfile,
     this.onUserProfileChanged,
     this.onRecipientChanged,
+    this.onRecipientDeleted,
   });
 
   @override
@@ -159,8 +161,8 @@ Future<void> _markNotificationRead(int id) async {
   }
 
   Future<void> _editRecipient() async {
-    final updated = await Navigator.of(context).push<RecipientSummary>(
-      MaterialPageRoute<RecipientSummary>(
+    final result = await Navigator.of(context).push<Object>(
+      MaterialPageRoute<Object>(
         builder: (_) => EditRecipientScreen(
           recipient: currentRecipient,
           userRole: widget.userRole,
@@ -168,13 +170,21 @@ Future<void> _markNotificationRead(int id) async {
       ),
     );
 
-    if (updated == null || !mounted) return;
+    if (result == null || !mounted) return;
 
-    setState(() => currentRecipient = updated);
-    widget.onRecipientChanged?.call(updated);
-    await _refreshCallSchedule();
-    if (!mounted) return;
-    _showSavedMessage('피보호자 정보가 수정되었습니다.');
+    if (result == 'deleted') {
+      widget.onRecipientDeleted?.call(currentRecipient.id);
+      Navigator.of(context, rootNavigator: true).pop();
+      return;
+    }
+
+    if (result is RecipientSummary) {
+      setState(() => currentRecipient = result);
+      widget.onRecipientChanged?.call(result);
+      await _refreshCallSchedule();
+      if (!mounted) return;
+      _showSavedMessage('피보호자 정보가 수정되었습니다.');
+    }
   }
 
   void _showSavedMessage(String message) {
