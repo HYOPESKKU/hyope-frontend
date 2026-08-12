@@ -47,12 +47,10 @@ class _EditRecipientScreenState extends State<EditRecipientScreen> {
   @override
   void initState() {
     super.initState();
-    final name = widget.recipient.name.trim();
-    // 백엔드는 성/이름을 따로 받는데 이름만 합쳐져 있어서, 첫 글자를 성으로 임시 분리합니다.
     _lastNameController =
-        TextEditingController(text: name.isEmpty ? '' : name.substring(0, 1));
+        TextEditingController(text: widget.recipient.lastName);
     _firstNameController =
-        TextEditingController(text: name.isEmpty ? '' : name.substring(1));
+        TextEditingController(text: widget.recipient.firstName);
     _phoneController = TextEditingController(text: widget.recipient.phoneNumber);
     _addressController = TextEditingController(text: widget.recipient.address ?? '');
     _intervalDaysController = TextEditingController(text: '1');

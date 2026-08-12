@@ -170,6 +170,8 @@ class UserProfile {
 class RecipientSummary {
   final int id;
   final String name;
+  final String firstName;
+  final String lastName;
   final DateTime birthDate;
   final Gender gender;
   final String relation;
@@ -181,6 +183,8 @@ class RecipientSummary {
   const RecipientSummary({
     required this.id,
     required this.name,
+    required this.firstName,
+    required this.lastName,
     required this.birthDate,
     required this.gender,
     required this.relation,
@@ -190,13 +194,11 @@ class RecipientSummary {
     this.recentEvents = const [],
   });
 
-  int get age => calculateAge(birthDate);
-
-  String get initial => name.trim().isEmpty ? '?' : name.trim()[0];
-
   RecipientSummary copyWith({
     int? id,
     String? name,
+    String? firstName,
+    String? lastName,
     DateTime? birthDate,
     Gender? gender,
     String? relation,
@@ -208,6 +210,8 @@ class RecipientSummary {
     return RecipientSummary(
       id: id ?? this.id,
       name: name ?? this.name,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
       birthDate: birthDate ?? this.birthDate,
       gender: gender ?? this.gender,
       relation: relation ?? this.relation,
@@ -217,6 +221,10 @@ class RecipientSummary {
       recentEvents: recentEvents ?? this.recentEvents,
     );
   }
+
+  int get age => calculateAge(birthDate);
+
+  String get initial => name.trim().isEmpty ? '?' : name.trim()[0];
 }
 
 int calculateAge(DateTime birthDate) {

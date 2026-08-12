@@ -70,6 +70,8 @@ class RecipientService {
     return RecipientSummary(
       id: json['id'] as int,
       name: '${json['lastName']}${json['firstName']}',
+      firstName: json['firstName'] as String,
+      lastName: json['lastName'] as String,
       birthDate: DateTime.parse(json['birthDate'] as String),
       gender: (json['gender'] as String) == 'MALE' ? Gender.male : Gender.female,
       relation: relationLabel(json['relationToGuardian'] as String),
