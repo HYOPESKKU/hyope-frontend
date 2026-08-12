@@ -47,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       if (!mounted) return;
 
-      final profile = await GuardianService().findMyProfile(loginId);
+      final profile = await GuardianService().findMyProfile();
       final recipients = await RecipientService().findByGuardian(profile.id);
       if (!mounted) return;
 

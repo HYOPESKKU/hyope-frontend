@@ -60,7 +60,7 @@ class RecipientInfoCard extends StatelessWidget {
                         .map((hobby) => _Chip(text: hobby))
                         .toList(),
                   )
-                : const _EmptyValueText(),
+                : const _EmptyValueText(hint: '통화 중 알게 되면 자동으로 채워져요'),
           ),
           _InfoRow(
             icon: Icons.event_note_outlined,
@@ -85,7 +85,7 @@ class RecipientInfoCard extends StatelessWidget {
                         )
                         .toList(),
                   )
-                : const _EmptyValueText(),
+                : const _EmptyValueText(hint: '통화 중 알게 되면 자동으로 채워져요'),
           ),
         ],
       ),
@@ -94,17 +94,39 @@ class RecipientInfoCard extends StatelessWidget {
 }
 
 class _EmptyValueText extends StatelessWidget {
-  const _EmptyValueText();
+  /// 값이 없는 이유를 덧붙일 때 쓴다.
+  ///
+  /// 취미·최근 근황은 보호자가 입력하는 값이 아니라 통화 중 AI가 수집한다
+  /// (백엔드 RecipientProfileService.applyUpdates는 통화 결과로만 호출된다).
+  /// 그냥 "없음"만 보이면 보호자가 입력란을 찾다가 못 찾는다.
+  final String? hint;
+
+  const _EmptyValueText({this.hint});
 
   @override
   Widget build(BuildContext context) {
-    return const Text(
-      '없음',
-      style: TextStyle(
-        fontSize: 13.5,
-        color: Color(0xFF9AA2B4),
-        fontWeight: FontWeight.w500,
-      ),
+    const emptyStyle = TextStyle(
+      fontSize: 13.5,
+      color: Color(0xFF9AA2B4),
+      fontWeight: FontWeight.w500,
+    );
+
+    if (hint == null) return const Text('없음', style: emptyStyle);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('없음', style: emptyStyle),
+        const SizedBox(height: 2),
+        Text(
+          hint!,
+          style: const TextStyle(
+            fontSize: 11.5,
+            color: Color(0xFFB0B7C5),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }

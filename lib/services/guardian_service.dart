@@ -4,15 +4,15 @@ import 'api_client.dart';
 class GuardianService {
   final _client = ApiClient();
 
-  /// GET /guardians 전체 목록에서 loginId로 내 정보를 찾습니다.
-  /// TODO: 백엔드에 "내 정보 조회(me)" 엔드포인트가 추가되면 이 메서드를 그걸로 교체하세요.
-  Future<UserProfile> findMyProfile(String loginId) async {
-    final list = await _client.get('/guardians') as List<dynamic>;
-    final mine = list.cast<Map<String, dynamic>>().firstWhere(
-          (g) => g['loginId'] == loginId,
-          orElse: () => throw ApiException(404, '내 계정 정보를 찾을 수 없습니다.'),
-        );
-    return _fromJson(mine);
+  /// 로그인한 본인의 프로필을 가져옵니다.
+  ///
+  /// 예전에는 `GET /guardians`로 전체 목록을 받아 loginId로 골라냈다. 보호자가
+  /// 늘면 남의 이름·전화번호·이메일까지 앱으로 내려오므로 개인정보 문제가 있었다.
+  /// 백엔드에 `/guardians/me`가 생겨(GuardianController.readMe) 그걸로 바꿨다.
+  /// 서버가 JWT에서 사용자를 판별하므로 loginId를 넘길 필요도 없다.
+  Future<UserProfile> findMyProfile() async {
+    final json = await _client.get('/guardians/me') as Map<String, dynamic>;
+    return _fromJson(json);
   }
 
   Future<UserProfile> updateProfile({
