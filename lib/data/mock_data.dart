@@ -10,7 +10,8 @@ class MockData {
   static final guardianProfile = UserProfile(
     id: 1,
     role: AppUserRole.guardian,
-    name: '김민수',
+    firstName: '민수',
+    lastName: '김',
     phoneNumber: '010-9876-5432',
     email: 'guardian@hyope.kr',
   );
@@ -18,14 +19,14 @@ class MockData {
   static final socialWorkerProfile = UserProfile(
     id: 2,
     role: AppUserRole.socialWorker,
-    name: '이지은',
+    firstName: '지은',
+    lastName: '이',
     phoneNumber: '010-5555-2026',
     email: 'worker@hyope.kr',
   );
 
   static final guardianRecipient = RecipientSummary(
     id: 1,
-    name: '김영희',
     firstName: '영희',
     lastName: '김',
     birthDate: DateTime(1948, 3, 18),
@@ -37,7 +38,6 @@ class MockData {
   static final managedRecipients = <RecipientSummary>[
     RecipientSummary(
       id: 101,
-      name: '박정수',
       firstName: '정수',
       lastName: '박',
       birthDate: DateTime(1942, 8, 4),
@@ -47,7 +47,6 @@ class MockData {
     ),
     RecipientSummary(
       id: 102,
-      name: '이순자',
       firstName: '순자',
       lastName: '이',
       birthDate: DateTime(1946, 11, 21),
@@ -57,7 +56,6 @@ class MockData {
     ),
     RecipientSummary(
       id: 103,
-      name: '최영식',
       firstName: '영식',
       lastName: '최',
       birthDate: DateTime(1939, 5, 9),
@@ -67,7 +65,6 @@ class MockData {
     ),
     RecipientSummary(
       id: 104,
-      name: '한명숙',
       firstName: '명숙',
       lastName: '한',
       birthDate: DateTime(1951, 1, 30),
@@ -77,7 +74,6 @@ class MockData {
     ),
     RecipientSummary(
       id: 105,
-      name: '정기철',
       firstName: '기철',
       lastName: '정',
       birthDate: DateTime(1944, 6, 16),

@@ -40,7 +40,8 @@ class GuardianService {
       role: (json['role'] as String) == 'GUARDIAN'
           ? AppUserRole.guardian
           : AppUserRole.socialWorker,
-      name: '${json['lastName']}${json['firstName']}',
+      firstName: json['firstName'] as String,
+      lastName: json['lastName'] as String,
       phoneNumber: json['phoneNumber'] as String,
       email: json['email'] as String,
     );

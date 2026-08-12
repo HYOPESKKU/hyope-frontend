@@ -28,13 +28,9 @@ class _EditUserProfileScreenState extends State<EditUserProfileScreen> {
   @override
   void initState() {
     super.initState();
-    final name = widget.profile.name.trim();
-    // 백엔드는 성/이름을 따로 받는데 프로필엔 합쳐진 이름만 있어서, 첫 글자를 성으로 임시 분리합니다.
-    // 정확하지 않으면 아래에서 직접 수정해주세요.
-    _lastNameController =
-        TextEditingController(text: name.isEmpty ? '' : name.substring(0, 1));
+    _lastNameController = TextEditingController(text: widget.profile.lastName);
     _firstNameController =
-        TextEditingController(text: name.isEmpty ? '' : name.substring(1));
+        TextEditingController(text: widget.profile.firstName);
     _phoneController = TextEditingController(text: widget.profile.phoneNumber);
     _emailController = TextEditingController(text: widget.profile.email);
   }

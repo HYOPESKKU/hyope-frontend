@@ -138,29 +138,42 @@ extension AdherenceAggregateView on AdherenceAggregate {
 class UserProfile {
   final int id;
   final AppUserRole role;
-  final String name;
+
+  final String firstName;
+  final String lastName;
   final String phoneNumber;
   final String email;
 
   const UserProfile({
     required this.id,
     required this.role,
-    required this.name,
+    required this.firstName,
+    required this.lastName,
     required this.phoneNumber,
     required this.email,
   });
 
+  /// 화면 표시용으로 합친 이름.
+  ///
+  /// 필드로 따로 갖고 있지 않고 매번 만든다. 예전에는 합친 값을 필드로 두고
+  /// 수정 화면에서 첫 글자를 잘라 성을 되찾았는데, 남궁·황보 같은 복성이
+  /// `남` + `궁민준`으로 깨졌고 그대로 저장하면 서버 이름까지 오염됐다.
+  /// 성/이름을 원본 그대로 두면 되돌릴 일 자체가 없어진다.
+  String get name => '$lastName$firstName';
+
   UserProfile copyWith({
     int? id,
     AppUserRole? role,
-    String? name,
+    String? firstName,
+    String? lastName,
     String? phoneNumber,
     String? email,
   }) {
     return UserProfile(
       id: id ?? this.id,
       role: role ?? this.role,
-      name: name ?? this.name,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       email: email ?? this.email,
     );
@@ -169,7 +182,6 @@ class UserProfile {
 
 class RecipientSummary {
   final int id;
-  final String name;
   final String firstName;
   final String lastName;
   final DateTime birthDate;
@@ -182,7 +194,6 @@ class RecipientSummary {
 
   const RecipientSummary({
     required this.id,
-    required this.name,
     required this.firstName,
     required this.lastName,
     required this.birthDate,
@@ -196,7 +207,6 @@ class RecipientSummary {
 
   RecipientSummary copyWith({
     int? id,
-    String? name,
     String? firstName,
     String? lastName,
     DateTime? birthDate,
@@ -209,7 +219,6 @@ class RecipientSummary {
   }) {
     return RecipientSummary(
       id: id ?? this.id,
-      name: name ?? this.name,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
       birthDate: birthDate ?? this.birthDate,
@@ -221,6 +230,9 @@ class RecipientSummary {
       recentEvents: recentEvents ?? this.recentEvents,
     );
   }
+
+  /// 화면 표시용으로 합친 이름. UserProfile.name과 같은 이유로 getter다.
+  String get name => '$lastName$firstName';
 
   int get age => calculateAge(birthDate);
 

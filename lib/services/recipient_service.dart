@@ -69,7 +69,6 @@ class RecipientService {
   RecipientSummary _fromJson(Map<String, dynamic> json) {
     return RecipientSummary(
       id: json['id'] as int,
-      name: '${json['lastName']}${json['firstName']}',
       firstName: json['firstName'] as String,
       lastName: json['lastName'] as String,
       birthDate: DateTime.parse(json['birthDate'] as String),

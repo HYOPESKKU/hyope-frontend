@@ -65,7 +65,8 @@ class _MainScreenState extends State<MainScreen> {
         UserProfile(
           id: 0,
           role: widget.userRole,
-          name: currentRecipient.name,
+          firstName: currentRecipient.firstName,
+          lastName: currentRecipient.lastName,
           phoneNumber: currentRecipient.phoneNumber,
           email: '',
         );
