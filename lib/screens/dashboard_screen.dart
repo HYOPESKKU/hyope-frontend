@@ -85,11 +85,17 @@ class DashboardScreen extends StatelessWidget {
                 ? pick(e)
                 : null)
             .toList();
-
+    
     final depressionValues = valuesOf((e) => e.depressionScore, 'depressionScore');
     final cognitiveValues = valuesOf((e) => e.cognitiveScore, 'cognitiveScore');
     final emotionValues = valuesOf((e) => e.emotionalStability, 'emotionalStability');
     final physicalRiskValues = valuesOf((e) => e.healthRisk, 'healthRisk');
+    /*
+    final depressionValues = valuesOf((e) => e.depressionScore, '우울');
+    final cognitiveValues = valuesOf((e) => e.cognitiveScore, '인지기능');
+    final emotionValues = valuesOf((e) => e.emotionalStability, '불안');
+    final physicalRiskValues = valuesOf((e) => e.healthRisk, '신체건강');
+    */
     final current = displayedAssessment!;
 
     final metricCards = [

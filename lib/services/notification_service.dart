@@ -15,4 +15,8 @@ class NotificationService {
   Future<void> markRead(int id) async {
     await _client.patch('/notifications/$id/read');
   }
+
+  Future<void> delete(int id) async {
+    await _client.delete('/notifications/$id');
+  }
 }

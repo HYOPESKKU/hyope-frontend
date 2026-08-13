@@ -7,11 +7,13 @@ import '../widgets/common_widgets.dart';
 class NotificationSettingsScreen extends StatelessWidget {
   final List<GuardianNotification> notifications;
   final ValueChanged<int> onMarkRead;
+  final ValueChanged<int> onDelete;
 
   const NotificationSettingsScreen({
     super.key,
     required this.notifications,
     required this.onMarkRead,
+    required this.onDelete,
   });
 
   bool _isDailyNews(NotificationCategory type) {
@@ -70,6 +72,7 @@ class NotificationSettingsScreen extends StatelessWidget {
                     title: '위험도 변동',
                     notifications: riskChanges,
                     onMarkRead: onMarkRead,
+                    onDelete: onDelete,
                   ),
                   const SizedBox(height: 10),
                 ],
@@ -78,6 +81,7 @@ class NotificationSettingsScreen extends StatelessWidget {
                     title: '오늘의 소식',
                     notifications: dailyNews,
                     onMarkRead: onMarkRead,
+                    onDelete: onDelete,
                   ),
                   const SizedBox(height: 10),
                 ],
@@ -86,6 +90,7 @@ class NotificationSettingsScreen extends StatelessWidget {
                     title: '기타 알림',
                     notifications: others,
                     onMarkRead: onMarkRead,
+                    onDelete: onDelete,
                   ),
               ],
             ],
@@ -100,11 +105,13 @@ class _NotificationSection extends StatelessWidget {
   final String title;
   final List<GuardianNotification> notifications;
   final ValueChanged<int> onMarkRead;
+  final ValueChanged<int> onDelete;
 
   const _NotificationSection({
     required this.title,
     required this.notifications,
     required this.onMarkRead,
+    required this.onDelete,
   });
 
   @override
@@ -119,6 +126,7 @@ class _NotificationSection extends StatelessWidget {
             _NotificationTile(
               notification: n,
               onTap: () => onMarkRead(n.id),
+              onDelete: () => onDelete(n.id),
             ),
             if (n != notifications.last) const SizedBox(height: 6),
           ],
@@ -131,70 +139,90 @@ class _NotificationSection extends StatelessWidget {
 class _NotificationTile extends StatelessWidget {
   final GuardianNotification notification;
   final VoidCallback onTap;
+  final VoidCallback onDelete;
 
-  const _NotificationTile({required this.notification, required this.onTap});
+  const _NotificationTile({
+    required this.notification,
+    required this.onTap,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
     final unread = !notification.isRead;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 5),
-              child: Container(
-                width: 7,
-                height: 7,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: unread ? const Color(0xFFE5484D) : const Color(0xFFD5D9E3),
+    return Dismissible(
+      key: ValueKey(notification.id),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) => onDelete(),
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        margin: const EdgeInsets.symmetric(vertical: 3),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE5484D),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: unread ? const Color(0xFFE5484D) : const Color(0xFFD5D9E3),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    notification.message,
-                    style: TextStyle(
-                      fontSize: 12.8,
-                      fontWeight: unread ? FontWeight.w800 : FontWeight.w600,
-                      color: unread ? const Color(0xFF1F2430) : const Color(0xFF6B7280),
-                    ),
-                  ),
-                  if (notification.detail != null &&
-                      notification.detail!.trim().isNotEmpty) ...[
-                    const SizedBox(height: 3),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      notification.detail!,
+                      notification.message,
+                      style: TextStyle(
+                        fontSize: 12.8,
+                        fontWeight: unread ? FontWeight.w800 : FontWeight.w600,
+                        color: unread ? const Color(0xFF1F2430) : const Color(0xFF6B7280),
+                      ),
+                    ),
+                    if (notification.detail != null &&
+                        notification.detail!.trim().isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        notification.detail!,
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF7A8294),
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 2),
+                    Text(
+                      formatDateTime(notification.createdAt),
                       style: const TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF7A8294),
-                        height: 1.4,
+                        fontSize: 10.8,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF9AA2B4),
                       ),
                     ),
                   ],
-                  const SizedBox(height: 2),
-                  Text(
-                    formatDateTime(notification.createdAt),
-                    style: const TextStyle(
-                      fontSize: 10.8,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF9AA2B4),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

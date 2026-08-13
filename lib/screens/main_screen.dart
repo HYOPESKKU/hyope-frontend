@@ -137,6 +137,19 @@ Future<void> _markNotificationRead(int id) async {
   }
 }
 
+Future<void> _deleteNotification(int id) async {
+  final current = notifications;
+  if (current == null) return;
+  setState(() {
+    notifications = current.where((n) => n.id != id).toList();
+  });
+  try {
+    await NotificationService().delete(id);
+  } catch (_) {
+    // 실패해도 조용히 무시 — 다음 로드 때 서버 상태로 다시 맞춰진다.
+  }
+}
+
   DailyAssessment? get selectedAssessment {
     final date = selectedDate;
     final list = assessments;
@@ -312,6 +325,7 @@ Future<void> _markNotificationRead(int id) async {
                 .where((n) => n.recipientId == currentRecipient.id)
                 .toList(),
             onMarkRead: _markNotificationRead,
+            onDelete: _deleteNotification,
           ),
           UserSettingsScreen(
             userRole: widget.userRole,
