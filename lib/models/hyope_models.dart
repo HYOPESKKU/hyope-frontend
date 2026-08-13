@@ -348,8 +348,11 @@ class DailyAssessment {
   /// 기본값이다. 그대로 선을 이으면 보호자가 "이 날 좋아졌다/나빠졌다"로
   /// 읽는데, 실제로는 **측정을 못 한 날**이다. 오해를 부르므로 그래프에서
   /// 끊어서 표시한다.
-  bool get isMeasured =>
-      !hasNoDate && !isPlaceholder && incompleteCategories.isEmpty;
+  bool get isMeasured => !hasNoDate && !isPlaceholder;
+
+  bool isCategoryComplete(String categoryKey) {
+    return !incompleteCategories.contains(categoryKey);
+  }
 
   factory DailyAssessment.fromJson(Map<String, dynamic> json) {
     final rawAdherenceRecords = json['adherenceRecords'];
@@ -730,7 +733,7 @@ class GuardianNotification {
       type: parseNotificationCategory(json['type'] as String? ?? 'CALL_MISSED'),
       message: json['message'] as String? ?? '',
       detail: json['detail'] as String?,
-      isRead: json['isRead'] as bool? ?? json['is_read'] as bool? ?? false,
+      isRead: json['isRead'] as bool? ?? json['is_read'] as bool? ?? json['read'] as bool? ?? false,
       createdAt: _toDate(json['createdAt'] ?? json['created_at']),
     );
   }

@@ -76,13 +76,20 @@ class DashboardScreen extends StatelessWidget {
     // 통화가 실패했거나 답을 못 받은 날은 점수가 측정값이 아니라 기본값이다.
     // 그대로 선을 이으면 보호자가 "이 날 좋아졌다"로 읽으므로 null로 넘겨
     // 그래프에서 끊어 그린다(DailyAssessment.isMeasured 참고).
-    List<double?> valuesOf(double Function(DailyAssessment) pick) =>
-        assessments.map((e) => e.isMeasured ? pick(e) : null).toList();
+    List<double?> valuesOf(
+      double Function(DailyAssessment) pick,
+      String categoryKey,
+    ) =>
+        assessments
+            .map((e) => (e.isMeasured && e.isCategoryComplete(categoryKey))
+                ? pick(e)
+                : null)
+            .toList();
 
-    final depressionValues = valuesOf((e) => e.depressionScore);
-    final cognitiveValues = valuesOf((e) => e.cognitiveScore);
-    final emotionValues = valuesOf((e) => e.emotionalStability);
-    final physicalRiskValues = valuesOf((e) => e.healthRisk);
+    final depressionValues = valuesOf((e) => e.depressionScore, 'depressionScore');
+    final cognitiveValues = valuesOf((e) => e.cognitiveScore, 'cognitiveScore');
+    final emotionValues = valuesOf((e) => e.emotionalStability, 'emotionalStability');
+    final physicalRiskValues = valuesOf((e) => e.healthRisk, 'healthRisk');
     final current = displayedAssessment!;
 
     final metricCards = [
