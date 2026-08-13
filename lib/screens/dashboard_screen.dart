@@ -155,6 +155,24 @@ class DashboardScreen extends StatelessWidget {
                         hasUnreadNotification: hasUnreadNotification,
                       ),
                       const SizedBox(height: 14),
+
+                      // 위험도가 이 화면의 결론이라 맨 위에 둔다. 보호자가 앱을
+                      // 여는 이유는 "오늘 괜찮으신가"를 확인하려는 것이고, 그
+                      // 답을 스크롤 없이 바로 보여준다. 대상자 정보나 리포트는
+                      // 매번 볼 값이 아니라 아래로 내렸다.
+                      RiskGaugeCard(
+                        assessment: current,
+                        title: _riskTitle,
+                        phoneNumber: recipient.phoneNumber,
+                      ),
+                      if (current.incompleteCategories.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        IncompleteCategoriesBadge(categories: current.incompleteCategories),
+                      ],
+                      const SizedBox(height: 14),
+
+                      // 위험도를 본 직후 "이 사람이 누구였는지"를 바로 확인할 수
+                      // 있게 붙여 뒀다.
                       RecipientInfoCard(recipient: recipient),
                       const SizedBox(height: 14),
 
@@ -177,42 +195,6 @@ class DashboardScreen extends StatelessWidget {
                           onMonthChanged: onMonthChanged,
                           onDateSelected: onDateSelected,
                         ),
-                      ],
-                      const SizedBox(height: 10),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => ReportScreen(
-                                  recipient: recipient,
-                                  assessments: assessments,
-                                ),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.summarize_rounded, size: 19),
-                          label: const Text('주간 · 월간 리포트 보기'),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF4F80FF),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                            textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-
-                      RiskGaugeCard(
-                        assessment: current,
-                        title: _riskTitle,
-                        phoneNumber: recipient.phoneNumber,
-                      ),
-                      if (current.incompleteCategories.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        IncompleteCategoriesBadge(categories: current.incompleteCategories),
                       ],
                       const SizedBox(height: 14),
                       const SectionTitle(title: '영역별 건강 지표'),
@@ -245,6 +227,31 @@ class DashboardScreen extends StatelessWidget {
                                 .toList(),
                           );
                         },
+                      ),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => ReportScreen(
+                                  recipient: recipient,
+                                  assessments: assessments,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.summarize_rounded, size: 19),
+                          label: const Text('주간 · 월간 리포트 보기'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFF4F80FF),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 14),
                     ],
