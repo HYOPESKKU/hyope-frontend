@@ -31,6 +31,11 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # 쿠퍼티노 날짜·시간 피커는 로케일을 따라 표기를 바꾼다. 이게 없으면 앱이
+  # 영어 로케일로 떠서 "AM/PM", "August"처럼 나온다.
+  flutter_localizations:
+    sdk: flutter
+
   http: ^1.2.2
   url_launcher: ^6.3.1
 

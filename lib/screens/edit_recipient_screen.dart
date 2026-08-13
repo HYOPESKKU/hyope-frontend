@@ -4,6 +4,7 @@ import '../models/hyope_models.dart';
 import '../services/api_client.dart';
 import '../services/call_schedule_service.dart';
 import '../services/recipient_service.dart';
+import '../widgets/cupertino_pickers.dart';
 
 const _relationOptions = <String, String>{
   'CHILD': '자녀',
@@ -93,14 +94,12 @@ class _EditRecipientScreenState extends State<EditRecipientScreen> {
   }
 
   Future<void> _selectBirthDate() async {
-    final selected = await showDatePicker(
+    final selected = await showKoDatePicker(
       context: context,
       initialDate: _birthDate,
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
-      helpText: '생년월일 선택',
-      cancelText: '취소',
-      confirmText: '선택',
+      title: '생년월일 선택',
     );
 
     if (selected != null) {
@@ -109,12 +108,10 @@ class _EditRecipientScreenState extends State<EditRecipientScreen> {
   }
 
   Future<void> _pickCallTime() async {
-    final picked = await showTimePicker(
+    final picked = await showKoTimePicker(
       context: context,
       initialTime: _callTime ?? const TimeOfDay(hour: 10, minute: 0),
-      helpText: '전화 예약 시간대 선택',
-      cancelText: '취소',
-      confirmText: '선택',
+      title: '전화 예약 시간',
     );
     if (picked != null) setState(() => _callTime = picked);
   }

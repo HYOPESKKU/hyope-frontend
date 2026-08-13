@@ -5,6 +5,7 @@ import '../services/api_client.dart';
 import '../services/call_schedule_service.dart';
 import '../services/recipient_service.dart';
 import '../widgets/auth_form_widgets.dart';
+import '../widgets/cupertino_pickers.dart';
 
 const _onboardingRelationOptions = <String, String>{
   'PARENT': '부모',
@@ -51,22 +52,21 @@ class _RecipientOnboardingScreenState extends State<RecipientOnboardingScreen> {
 
   Future<void> _pickBirthDate() async {
     final now = DateTime.now();
-    final picked = await showDatePicker(
+    final picked = await showKoDatePicker(
       context: context,
       initialDate: DateTime(now.year - 70),
       firstDate: DateTime(1900),
       lastDate: now,
+      title: '생년월일 선택',
     );
     if (picked != null) setState(() => _birthDate = picked);
   }
 
   Future<void> _pickCallTime() async {
-    final picked = await showTimePicker(
+    final picked = await showKoTimePicker(
       context: context,
       initialTime: _callTime ?? const TimeOfDay(hour: 10, minute: 0),
-      helpText: '전화 예약 시간대 선택',
-      cancelText: '취소',
-      confirmText: '선택',
+      title: '전화 예약 시간',
     );
     if (picked != null) setState(() => _callTime = picked);
   }

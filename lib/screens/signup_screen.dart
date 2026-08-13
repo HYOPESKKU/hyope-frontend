@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
 import '../widgets/auth_form_widgets.dart';
+import '../widgets/cupertino_pickers.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -40,11 +41,12 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Future<void> _pickBirthDate() async {
     final now = DateTime.now();
-    final picked = await showDatePicker(
+    final picked = await showKoDatePicker(
       context: context,
       initialDate: DateTime(now.year - 30),
       firstDate: DateTime(1900),
       lastDate: now,
+      title: '생년월일 선택',
     );
     if (picked != null) setState(() => _birthDate = picked);
   }
