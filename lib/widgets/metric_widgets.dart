@@ -55,14 +55,17 @@ class MetricSummaryCard extends StatelessWidget {
         children: [
           Row(
             children: [
+              // 카드 4장이 2열로 붙어 있어 어느 지표인지 아이콘으로 먼저
+              // 구분하게 된다. 30x30일 때는 표정·심전도 같은 모양이 뭉개져
+              // 제목을 읽어야 알 수 있었다.
               Container(
-                width: 30,
-                height: 30,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(icon, color: color, size: 18),
+                child: Icon(icon, color: color, size: 26),
               ),
               const Spacer(),
               Container(
