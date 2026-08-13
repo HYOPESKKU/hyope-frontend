@@ -68,32 +68,45 @@ class MetricSummaryCard extends StatelessWidget {
                 child: Icon(icon, color: color, size: 26),
               ),
               const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  isBetter ? '개선' : '주의',
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w900,
-                    color: statusColor,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 4),
-              IconButton(
-                onPressed: () => _showMetricHelp(context),
-                tooltip: '$title 설명',
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints.tightFor(width: 28, height: 28),
-                splashRadius: 16,
-                icon: const Icon(
-                  Icons.help_outline_rounded,
-                  size: 19,
-                  color: Color(0xFF8A92A6),
+              // 카드 안쪽 여백(14)만큼 왼쪽으로 들어와 있어 오른쪽이 허전했다.
+              // 여백을 상쇄해 카드 모서리 쪽으로 붙인다. 카드 패딩 자체를 줄이면
+              // 아이콘과 아래 텍스트까지 밀려서 이 줄만 옮긴다.
+              Transform.translate(
+                offset: const Offset(6, 0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        isBetter ? '개선' : '주의',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w900,
+                          color: statusColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    IconButton(
+                      onPressed: () => _showMetricHelp(context),
+                      tooltip: '$title 설명',
+                      padding: EdgeInsets.zero,
+                      constraints:
+                          const BoxConstraints.tightFor(width: 28, height: 28),
+                      splashRadius: 16,
+                      icon: const Icon(
+                        Icons.help_outline_rounded,
+                        size: 19,
+                        color: Color(0xFF8A92A6),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

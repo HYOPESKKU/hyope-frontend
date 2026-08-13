@@ -233,12 +233,21 @@ class MiniLineChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (values.length < 2) return;
+    if (values.isEmpty) return;
 
     final chartLeft = 5.0;
     final chartRight = size.width - 5.0;
     final chartTop = 2.0;
     final chartBottom = showDateLabels ? size.height - 16.0 : size.height;
+
+    // 측정이 하루치뿐이면 (length - 1)이 0이라 나눗셈이 깨진다. 예전에는
+    // length < 2에서 그냥 return 해 차트 자리가 통째로 비었는데, 서비스 시작
+    // 직후나 통화를 막 시작한 어르신에게는 그게 정상 상태다. 빈 칸은 오류처럼
+    // 보이므로 한 점이라도 가운데에 찍는다.
+    final isSinglePoint = values.length == 1;
+    double xAt(int i) => isSinglePoint
+        ? (chartLeft + chartRight) / 2
+        : chartLeft + (chartRight - chartLeft) * i / (values.length - 1);
 
     // 측정된 구간만 이어 그린다. 미측정 지점에서 path를 끊는다.
     final path = Path();
@@ -246,7 +255,7 @@ class MiniLineChartPainter extends CustomPainter {
     var penDown = false;
 
     for (int i = 0; i < values.length; i++) {
-      final x = chartLeft + (chartRight - chartLeft) * i / (values.length - 1);
+      final x = xAt(i);
       final value = values[i];
 
       if (value == null) {
@@ -283,8 +292,11 @@ class MiniLineChartPainter extends CustomPainter {
     canvas.drawPath(path, linePaint);
 
     final dotPaint = Paint()..color = color;
+    // 점이 하나뿐이면 이어질 선이 없어 2px 점은 얼룩처럼 보인다. 조금 키워
+    // 의도한 표시라는 게 드러나게 한다.
+    final dotRadius = isSinglePoint ? 3.5 : 2.0;
     for (final point in points) {
-      if (point != null) canvas.drawCircle(point, 2.0, dotPaint);
+      if (point != null) canvas.drawCircle(point, dotRadius, dotPaint);
     }
 
     // 미측정 지점은 기준선 위에 회색 빈 점으로 표시한다. 아무것도 안 그리면
@@ -295,7 +307,7 @@ class MiniLineChartPainter extends CustomPainter {
       ..strokeWidth = 1.2;
     for (int i = 0; i < points.length; i++) {
       if (points[i] != null) continue;
-      final x = chartLeft + (chartRight - chartLeft) * i / (values.length - 1);
+      final x = xAt(i);
       canvas.drawCircle(Offset(x, chartBottom - 3), 2.2, missingPaint);
     }
 
@@ -304,7 +316,7 @@ class MiniLineChartPainter extends CustomPainter {
       for (final index in labelIndexes) {
         final point = points[index] ??
             Offset(
-              chartLeft + (chartRight - chartLeft) * index / (values.length - 1),
+              xAt(index),
               chartBottom,
             );
         final date = dates[index];
