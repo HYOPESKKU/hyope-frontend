@@ -169,44 +169,48 @@ class RiskGaugeCard extends StatelessWidget {
                     color: Color(0xFF687085),
                   ),
                 ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: () => _makeCall(context),
-                        style: FilledButton.styleFrom(
-                          minimumSize: const Size(0, 40),
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          textStyle: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        icon: const Icon(Icons.phone_outlined, size: 17),
-                        label: const Text('전화하기'),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => _sendMessage(context),
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(0, 40),
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          textStyle: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        icon: const Icon(Icons.message_outlined, size: 17),
-                        label: const Text('문자 보내기'),
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
+          ),
+
+          // 연락 버튼은 판정 박스 밖에 둔다. 안에 있으면 위험 단계 색을 입은
+          // 영역의 일부로 보여서, 판정 내용의 부속처럼 읽힌다. 실제로는 위험
+          // 단계와 무관하게 늘 쓸 수 있는 동작이라 분리했다.
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: () => _makeCall(context),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 40),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    textStyle: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  icon: const Icon(Icons.phone_outlined, size: 17),
+                  label: const Text('전화하기'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _sendMessage(context),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 40),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    textStyle: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  icon: const Icon(Icons.message_outlined, size: 17),
+                  label: const Text('문자 보내기'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
