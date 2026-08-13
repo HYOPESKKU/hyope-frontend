@@ -51,15 +51,54 @@ class RiskGaugeCard extends StatelessWidget {
     }
   }
 
+  String _formatDate(DateTime date) {
+    const weekdays = [
+      '월요일',
+      '화요일',
+      '수요일',
+      '목요일',
+      '금요일',
+      '토요일',
+      '일요일',
+    ];
+    return '${date.year}년 ${date.month}월 ${date.day}일 ${weekdays[date.weekday - 1]}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final level = assessment.riskLevel;
+    final measuredAt = assessment.measuredAt;
+    final showTodayDate = title == '오늘의 돌봄 위험도';
 
     return HyopeCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SectionTitle(title: title),
+          if (showTodayDate) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(
+                  Icons.calendar_today_rounded,
+                  size: 18,
+                  color: Color(0xFF4F80FF),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _formatDate(measuredAt),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF182033),
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 6),
           SizedBox(
             height: 188,
