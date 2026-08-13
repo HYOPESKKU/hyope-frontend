@@ -110,12 +110,16 @@ class _ConversationLogScreenState extends State<ConversationLogScreen> {
                     .where((log) => isInWeek(log.startedAt, weekStart))
                     .toList();
 
-                // 이동 한계. 기록이 있는 범위 밖으로는 못 나가게 막는다 —
-                // 빈 주를 무한히 넘기게 두면 끝이 어딘지 알 수 없다.
-                final oldestWeek = startOfWeek(all.last.startedAt);
+                // 과거는 막지 않는다. "그 주에 통화가 없었다"는 것 자체가
+                // 보호자에게 의미 있는 정보라, 기록이 있는 구간만 보여주면
+                // 확인할 방법이 없어진다. 과거는 어차피 끝이 있다(어르신 등록 이전).
+                //
+                // 앞으로만 이번 주까지 막는다. 다음 주는 아직 오지 않은 시간이라
+                // 통화가 있을 수 없고, 열어두면 빈 주가 무한히 이어진다.
                 final newestWeek = startOfWeek(all.first.startedAt);
                 final thisWeek = startOfWeek(DateTime.now());
                 // 이번 주는 아직 통화가 없어도 볼 수 있어야 한다(오늘 걸 기다리는 중).
+                // newestWeek가 더 뒤면 그쪽을 쓴다 — 기기 시계가 어긋난 경우 대비.
                 final maxWeek = newestWeek.isAfter(thisWeek) ? newestWeek : thisWeek;
 
                 return CustomScrollView(
@@ -124,9 +128,7 @@ class _ConversationLogScreenState extends State<ConversationLogScreen> {
                     SliverToBoxAdapter(
                       child: _WeekNavigator(
                         weekStart: weekStart,
-                        onPrevious: weekStart.isAfter(oldestWeek)
-                            ? () => _moveWeek(-1)
-                            : null,
+                        onPrevious: () => _moveWeek(-1),
                         onNext:
                             weekStart.isBefore(maxWeek) ? () => _moveWeek(1) : null,
                       ),
@@ -182,9 +184,9 @@ class _ScreenTitle extends StatelessWidget {
 
 /// 주 단위 이동 막대.
 ///
-/// 콜백이 null이면 그 방향 끝이라는 뜻이고 버튼이 흐려진다. 버튼을 숨기지 않고
-/// 비활성으로 두는 이유는, 사라지면 자리가 밀려서 연타할 때 다른 곳을 누르게
-/// 되기 때문이다.
+/// 콜백이 null이면 그 방향 끝이라는 뜻이고 버튼이 흐려진다. 실제로는 다음 주
+/// 방향에서만 일어난다 — 과거는 막지 않는다. 버튼을 숨기지 않고 비활성으로
+/// 두는 이유는, 사라지면 자리가 밀려서 연타할 때 다른 곳을 누르게 되기 때문이다.
 class _WeekNavigator extends StatelessWidget {
   final DateTime weekStart;
   final VoidCallback? onPrevious;
