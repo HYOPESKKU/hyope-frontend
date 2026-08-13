@@ -68,45 +68,46 @@ class MetricSummaryCard extends StatelessWidget {
                 child: Icon(icon, color: color, size: 26),
               ),
               const Spacer(),
-              // 카드 안쪽 여백(14)만큼 왼쪽으로 들어와 있어 오른쪽이 허전했다.
-              // 여백을 상쇄해 카드 모서리 쪽으로 붙인다. 카드 패딩 자체를 줄이면
-              // 아이콘과 아래 텍스트까지 밀려서 이 줄만 옮긴다.
-              Transform.translate(
-                offset: const Offset(6, 0),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        isBetter ? '개선' : '주의',
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w900,
-                          color: statusColor,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 2),
-                    IconButton(
-                      onPressed: () => _showMetricHelp(context),
-                      tooltip: '$title 설명',
-                      padding: EdgeInsets.zero,
-                      constraints:
-                          const BoxConstraints.tightFor(width: 28, height: 28),
-                      splashRadius: 16,
-                      icon: const Icon(
-                        Icons.help_outline_rounded,
-                        size: 19,
-                        color: Color(0xFF8A92A6),
-                      ),
-                    ),
-                  ],
+              // IconButton은 기본이 MaterialTapTargetSize.padded라, constraints로
+              // 28x28을 줘도 레이아웃에서는 48x48을 차지한다. 시각적 아이콘은 그
+              // 안에 가운데 놓여 좌우로 10dp씩 투명한 여백이 생기고, 그만큼
+              // 아이콘이 카드 안쪽으로 들어가 아래 증감 수치(+0.0)의 오른쪽 끝과
+              // 어긋난다. alignment는 constraints 안에서만 작동해 이 여백을
+              // 넘지 못한다.
+              //
+              // shrinkWrap으로 그 여백을 없애고, 대신 버튼 크기를 44로 키워
+              // 터치 영역을 지킨다(28로 두면 누르기 어려워진다). 아이콘을
+              // 오른쪽에 붙이면 +0.0과 같은 세로선에 놓인다.
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  isBetter ? '개선' : '주의',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w900,
+                    color: statusColor,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                onPressed: () => _showMetricHelp(context),
+                tooltip: '$title 설명',
+                alignment: Alignment.centerRight,
+                constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+                style: IconButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                icon: const Icon(
+                  Icons.help_outline_rounded,
+                  size: 19,
+                  color: Color(0xFF8A92A6),
                 ),
               ),
             ],
