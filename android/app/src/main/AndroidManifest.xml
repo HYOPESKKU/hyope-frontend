@@ -45,5 +45,21 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+
+        <!-- 위험도 카드의 "전화"·"문자" 버튼(risk_widgets.dart)이 쓴다.
+
+             Android 11(API 30)부터 다른 앱이 기본적으로 안 보인다. url_launcher는
+             띄우기 전에 이 인텐트를 처리할 앱이 있는지 조회하는데, 여기 선언이
+             없으면 앱이 있어도 "없다"고 나와 조용히 실패한다. 문자만 안 되고
+             전화는 되던 이유도 이것이다 — 기본 전화 앱은 시스템이 예외로
+             보여주지만 메시지 앱은 그렇지 않다. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="tel"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="sms"/>
+        </intent>
     </queries>
 </manifest>

@@ -66,5 +66,16 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- 위험도 카드의 "전화"·"문자" 버튼(risk_widgets.dart)용.
+	     AndroidManifest의 <queries>와 목적은 같지만 걸리는 조건이 다르다.
+	     iOS는 지금 쓰는 launchUrl(=openURL) 경로에서는 이 선언이 없어도 열린다.
+	     canLaunchUrl(=canOpenURL)을 쓰는 순간부터 필요해지고, 없으면 항상
+	     false를 돌려줘 "열 수 없습니다"로 빠진다. 나중에 그 코드가 들어와도
+	     안 깨지도록 미리 선언해 둔다. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>tel</string>
+		<string>sms</string>
+	</array>
 </dict>
 </plist>
