@@ -361,7 +361,7 @@ Future<void> _markNotificationRead(int id) async {
               isLabelVisible: (notifications ?? const []).any((n) => !n.isRead),
               child: const Icon(Icons.notifications_rounded),
             ),
-            label: '알림설정',
+            label: '알림',
           ),
           const NavigationDestination(
             icon: Icon(Icons.manage_accounts_outlined),

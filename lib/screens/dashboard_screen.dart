@@ -290,7 +290,12 @@ class _EmptyDashboard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                HeaderSection(recipient: recipient, latestAssessment: null),
+                HeaderSection(
+                  recipient: recipient,
+                  latestAssessment: null,
+                  onNotificationTap: onNotificationTap,
+                  hasUnreadNotification: hasUnreadNotification,
+                ),
                 const SizedBox(height: 14),
                 RecipientInfoCard(recipient: recipient),
                 const SizedBox(height: 14),
