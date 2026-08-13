@@ -668,7 +668,7 @@ class ConversationMessage {
   }
 }
 
-enum NotificationCategory { callMissed, callFailed, highRisk, suddenSpike, incompleteAnalysis }
+enum NotificationCategory { callMissed, callFailed, highRisk, suddenSpike, incompleteAnalysis, newReport, dailyCallMissing }
 
 NotificationCategory parseNotificationCategory(String value) {
   switch (value.toUpperCase()) {
@@ -680,6 +680,10 @@ NotificationCategory parseNotificationCategory(String value) {
       return NotificationCategory.suddenSpike;
     case 'INCOMPLETE_ANALYSIS':
       return NotificationCategory.incompleteAnalysis;
+    case 'NEW_REPORT':
+      return NotificationCategory.newReport;
+    case 'DAILY_CALL_MISSING':
+      return NotificationCategory.dailyCallMissing;
     case 'BOTH':
       return NotificationCategory.highRisk;
     case 'CALL_MISSED':
@@ -693,6 +697,7 @@ class GuardianNotification {
   final int recipientId;
   final NotificationCategory type;
   final String message;
+  final String? detail;
   final bool isRead;
   final DateTime createdAt;
 
@@ -701,6 +706,7 @@ class GuardianNotification {
     required this.recipientId,
     required this.type,
     required this.message,
+    this.detail,
     required this.isRead,
     required this.createdAt,
   });
@@ -711,6 +717,7 @@ class GuardianNotification {
       recipientId: recipientId,
       type: type,
       message: message,
+      detail: detail,
       isRead: isRead ?? this.isRead,
       createdAt: createdAt,
     );
@@ -722,6 +729,7 @@ class GuardianNotification {
       recipientId: _toInt(json['recipient_id'] ?? json['recipientId']),
       type: parseNotificationCategory(json['type'] as String? ?? 'CALL_MISSED'),
       message: json['message'] as String? ?? '',
+      detail: json['detail'] as String?,
       isRead: json['isRead'] as bool? ?? json['is_read'] as bool? ?? false,
       createdAt: _toDate(json['createdAt'] ?? json['created_at']),
     );

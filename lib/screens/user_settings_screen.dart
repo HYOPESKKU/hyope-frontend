@@ -8,8 +8,14 @@ class UserSettingsScreen extends StatelessWidget {
   final UserProfile userProfile;
   final RecipientSummary recipient;
   final CallSchedule? callSchedule;
+  final bool dailyNewsAlertEnabled;
+  final bool riskChangeAlertEnabled;
+  final bool emergencySmsEnabled;
   final VoidCallback onEditUserProfile;
   final VoidCallback onEditRecipient;
+  final ValueChanged<bool> onDailyNewsAlertChanged;
+  final ValueChanged<bool> onRiskChangeAlertChanged;
+  final ValueChanged<bool> onEmergencySmsChanged;
   final VoidCallback onLogout;
 
   const UserSettingsScreen({
@@ -18,8 +24,14 @@ class UserSettingsScreen extends StatelessWidget {
     required this.userProfile,
     required this.recipient,
     required this.callSchedule,
+    required this.dailyNewsAlertEnabled,
+    required this.riskChangeAlertEnabled,
+    required this.emergencySmsEnabled,
     required this.onEditUserProfile,
     required this.onEditRecipient,
+    required this.onDailyNewsAlertChanged,
+    required this.onRiskChangeAlertChanged,
+    required this.onEmergencySmsChanged,
     required this.onLogout,
   });
 
@@ -137,6 +149,37 @@ class UserSettingsScreen extends StatelessWidget {
                       icon: Icons.delete_outline,
                       title: '녹음 보관 기간',
                       value: '30일',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              HyopeCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionTitle(title: '알림 설정'),
+                    const SizedBox(height: 10),
+                    SettingsSwitchTile(
+                      icon: Icons.description_outlined,
+                      title: '오늘의 소식 알림',
+                      subtitle: '리포트 도착, 통화 미완료, 전화 무응답 알림',
+                      value: dailyNewsAlertEnabled,
+                      onChanged: onDailyNewsAlertChanged,
+                    ),
+                    SettingsSwitchTile(
+                      icon: Icons.trending_up_rounded,
+                      title: '위험도 변동 알림',
+                      subtitle: '위험도 기준 초과, 급격한 변동 시 알림',
+                      value: riskChangeAlertEnabled,
+                      onChanged: onRiskChangeAlertChanged,
+                    ),
+                    SettingsSwitchTile(
+                      icon: Icons.emergency_outlined,
+                      title: '위급상황 SMS 알림',
+                      subtitle: '응급 상황 감지 시 앱과 문자로 즉시 알림',
+                      value: emergencySmsEnabled,
+                      onChanged: onEmergencySmsChanged,
                     ),
                   ],
                 ),

@@ -7,35 +7,36 @@ import '../widgets/common_widgets.dart';
 class NotificationSettingsScreen extends StatelessWidget {
   final List<GuardianNotification> notifications;
   final ValueChanged<int> onMarkRead;
-  final bool smsAlertEnabled;
-  final bool pushAlertEnabled;
-  final bool dailyReportEnabled;
-  final bool highRiskOnlyEnabled;
-  final bool guardianCallReminderEnabled;
-  final ValueChanged<bool> onSmsAlertChanged;
-  final ValueChanged<bool> onPushAlertChanged;
-  final ValueChanged<bool> onDailyReportChanged;
-  final ValueChanged<bool> onHighRiskOnlyChanged;
-  final ValueChanged<bool> onGuardianCallReminderChanged;
 
   const NotificationSettingsScreen({
     super.key,
     required this.notifications,
     required this.onMarkRead,
-    required this.smsAlertEnabled,
-    required this.pushAlertEnabled,
-    required this.dailyReportEnabled,
-    required this.highRiskOnlyEnabled,
-    required this.guardianCallReminderEnabled,
-    required this.onSmsAlertChanged,
-    required this.onPushAlertChanged,
-    required this.onDailyReportChanged,
-    required this.onHighRiskOnlyChanged,
-    required this.onGuardianCallReminderChanged,
   });
+
+  bool _isDailyNews(NotificationCategory type) {
+    return type == NotificationCategory.newReport ||
+        type == NotificationCategory.callMissed ||
+        type == NotificationCategory.callFailed ||
+        type == NotificationCategory.dailyCallMissing;
+  }
+
+  bool _isRiskChange(NotificationCategory type) {
+    return type == NotificationCategory.highRisk ||
+        type == NotificationCategory.suddenSpike ||
+        type == NotificationCategory.incompleteAnalysis;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final dailyNews =
+        notifications.where((n) => _isDailyNews(n.type)).toList();
+    final riskChanges =
+        notifications.where((n) => _isRiskChange(n.type)).toList();
+    final others = notifications
+        .where((n) => !_isDailyNews(n.type) && !_isRiskChange(n.type))
+        .toList();
+
     return SafeArea(
       child: Center(
         child: ConstrainedBox(
@@ -44,104 +45,84 @@ class NotificationSettingsScreen extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
             children: [
               const PageHeader(
-                title: '알림설정',
-                subtitle: '위험도 단계와 리포트 수신 방식을 설정합니다.',
+                title: '알림 이력',
+                subtitle: '최근 발생한 알림을 확인합니다.',
                 icon: Icons.notifications_none_rounded,
               ),
               const SizedBox(height: 14),
-              HyopeCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SectionTitle(title: '최근 알림'),
-                    const SizedBox(height: 10),
-                    if (notifications.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 6),
-                        child: Text(
-                          '받은 알림이 없습니다.',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF9AA2B4),
-                          ),
-                        ),
-                      )
-                    else
-                      for (final n in notifications) ...[
-                        _NotificationTile(
-                          notification: n,
-                          onTap: () => onMarkRead(n.id),
-                        ),
-                        if (n != notifications.last) const SizedBox(height: 6),
-                      ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              HyopeCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SectionTitle(title: '알림 수신 방식'),
-                    const SizedBox(height: 10),
-                    SettingsSwitchTile(
-                      icon: Icons.sms_outlined,
-                      title: 'SMS 문자 알림',
-                      subtitle: '위험도와 주요 이상 항목을 문자로 받기',
-                      value: smsAlertEnabled,
-                      onChanged: onSmsAlertChanged,
+              if (notifications.isEmpty)
+                HyopeCard(
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 6),
+                    child: Text(
+                      '받은 알림이 없습니다.',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF9AA2B4),
+                      ),
                     ),
-                    SettingsSwitchTile(
-                      icon: Icons.notifications_none_rounded,
-                      title: '앱 푸시 알림',
-                      subtitle: '주의·경고·고위험 발생 시 앱으로 받기',
-                      value: pushAlertEnabled,
-                      onChanged: onPushAlertChanged,
-                    ),
-                    SettingsSwitchTile(
-                      icon: Icons.description_outlined,
-                      title: '일일 리포트 알림',
-                      subtitle: '매일 통화 분석 완료 후 요약 받기',
-                      value: dailyReportEnabled,
-                      onChanged: onDailyReportChanged,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              HyopeCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SectionTitle(title: '알림 기준'),
-                    const SizedBox(height: 10),
-                    SettingsSwitchTile(
-                      icon: Icons.priority_high_rounded,
-                      title: '고위험만 강한 알림',
-                      subtitle: '8점 이상일 때만 강한 알림음 사용',
-                      value: highRiskOnlyEnabled,
-                      onChanged: onHighRiskOnlyChanged,
-                    ),
-                    SettingsSwitchTile(
-                      icon: Icons.phone_in_talk_outlined,
-                      title: '보호자 전화 권장 알림',
-                      subtitle: '주의 단계 이상이면 전화 확인을 권장',
-                      value: guardianCallReminderEnabled,
-                      onChanged: onGuardianCallReminderChanged,
-                    ),
-                    const SizedBox(height: 8),
-                    const SettingsInfoRow(
-                      icon: Icons.folder_outlined,
-                      title: '현재 알림 단계',
-                      value: '주의 이상',
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+                )
+              else ...[
+                if (riskChanges.isNotEmpty) ...[
+                  _NotificationSection(
+                    title: '위험도 변동',
+                    notifications: riskChanges,
+                    onMarkRead: onMarkRead,
+                  ),
+                  const SizedBox(height: 10),
+                ],
+                if (dailyNews.isNotEmpty) ...[
+                  _NotificationSection(
+                    title: '오늘의 소식',
+                    notifications: dailyNews,
+                    onMarkRead: onMarkRead,
+                  ),
+                  const SizedBox(height: 10),
+                ],
+                if (others.isNotEmpty)
+                  _NotificationSection(
+                    title: '기타 알림',
+                    notifications: others,
+                    onMarkRead: onMarkRead,
+                  ),
+              ],
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _NotificationSection extends StatelessWidget {
+  final String title;
+  final List<GuardianNotification> notifications;
+  final ValueChanged<int> onMarkRead;
+
+  const _NotificationSection({
+    required this.title,
+    required this.notifications,
+    required this.onMarkRead,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return HyopeCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionTitle(title: title),
+          const SizedBox(height: 10),
+          for (final n in notifications) ...[
+            _NotificationTile(
+              notification: n,
+              onTap: () => onMarkRead(n.id),
+            ),
+            if (n != notifications.last) const SizedBox(height: 6),
+          ],
+        ],
       ),
     );
   }
@@ -188,6 +169,19 @@ class _NotificationTile extends StatelessWidget {
                       color: unread ? const Color(0xFF1F2430) : const Color(0xFF6B7280),
                     ),
                   ),
+                  if (notification.detail != null &&
+                      notification.detail!.trim().isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      notification.detail!,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF7A8294),
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 2),
                   Text(
                     formatDateTime(notification.createdAt),

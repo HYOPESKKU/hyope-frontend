@@ -53,11 +53,9 @@ class _MainScreenState extends State<MainScreen> {
   bool isCalendarExpanded = false;
   int selectedTabIndex = 0;
 
-  bool smsAlertEnabled = true;
-  bool pushAlertEnabled = true;
-  bool dailyReportEnabled = true;
-  bool highRiskOnlyEnabled = false;
-  bool guardianCallReminderEnabled = true;
+  bool dailyNewsAlertEnabled = true;
+  bool riskChangeAlertEnabled = true;
+  bool emergencySmsEnabled = true;
 
   @override
   void initState() {
@@ -173,8 +171,8 @@ Future<void> _markNotificationRead(int id) async {
     if (result == null || !mounted) return;
 
     if (result == 'deleted') {
-      widget.onRecipientDeleted?.call(currentRecipient.id);
       Navigator.of(context, rootNavigator: true).pop();
+      widget.onRecipientDeleted?.call(currentRecipient.id);
       return;
     }
 
@@ -310,28 +308,30 @@ Future<void> _markNotificationRead(int id) async {
           ),
           ConversationLogScreen(recipientId: currentRecipient.id),
           NotificationSettingsScreen(
-            notifications: notifications ?? const [],
+            notifications: (notifications ?? const [])
+                .where((n) => n.recipientId == currentRecipient.id)
+                .toList(),
             onMarkRead: _markNotificationRead,
-            smsAlertEnabled: smsAlertEnabled,
-            pushAlertEnabled: pushAlertEnabled,
-            dailyReportEnabled: dailyReportEnabled,
-            highRiskOnlyEnabled: highRiskOnlyEnabled,
-            guardianCallReminderEnabled: guardianCallReminderEnabled,
-            onSmsAlertChanged: (value) => setState(() => smsAlertEnabled = value),
-            onPushAlertChanged: (value) => setState(() => pushAlertEnabled = value),
-            onDailyReportChanged: (value) => setState(() => dailyReportEnabled = value),
-            onHighRiskOnlyChanged: (value) => setState(() => highRiskOnlyEnabled = value),
-            onGuardianCallReminderChanged: (value) {
-              setState(() => guardianCallReminderEnabled = value);
-            },
           ),
           UserSettingsScreen(
             userRole: widget.userRole,
             userProfile: currentUser,
             recipient: currentRecipient,
             callSchedule: callSchedule,
+            dailyNewsAlertEnabled: dailyNewsAlertEnabled,
+            riskChangeAlertEnabled: riskChangeAlertEnabled,
+            emergencySmsEnabled: emergencySmsEnabled,
             onEditUserProfile: _editUserProfile,
             onEditRecipient: _editRecipient,
+            onDailyNewsAlertChanged: (value) {
+              setState(() => dailyNewsAlertEnabled = value);
+            },
+            onRiskChangeAlertChanged: (value) {
+              setState(() => riskChangeAlertEnabled = value);
+            },
+            onEmergencySmsChanged: (value) {
+              setState(() => emergencySmsEnabled = value);
+            },
             onLogout: _logout,
           ),
         ],
