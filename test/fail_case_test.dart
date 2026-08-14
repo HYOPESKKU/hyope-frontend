@@ -154,9 +154,15 @@ void _measuredTests() {
       expect(a.isMeasured, isFalse);
     });
 
-    test('미완료 카테고리가 있으면 미측정이다 (무응답)', () {
+    test('미완료 카테고리는 그 항목만 빠지고 날짜 전체가 미측정이 되지는 않는다', () {
+      // 예전에는 카테고리 하나만 미완료여도 isMeasured가 false였다. 그러면
+      // 우울만 못 물어본 날의 나머지 세 지표까지 통째로 버려졌다. 지금은
+      // isCategoryComplete로 지표별로 거른다(898df4b).
       final a = _assessment(incomplete: const ['우울']);
-      expect(a.isMeasured, isFalse);
+
+      expect(a.isMeasured, isTrue);
+      expect(a.isCategoryComplete('우울'), isFalse);
+      expect(a.isCategoryComplete('인지기능'), isTrue);
     });
 
     test('점수 0.5가 하나뿐이면 placeholder가 아니다', () {
