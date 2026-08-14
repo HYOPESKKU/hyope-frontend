@@ -92,11 +92,19 @@ class DashboardScreen extends StatelessWidget {
     final physicalRiskValues = valuesOf((e) => e.healthRisk, '신체건강');
     final current = displayedAssessment!;
 
+    // 카드에 크게 띄우는 현재 점수도 같은 기준으로 거른다. 그래프만 null로
+    // 끊고 점수는 원본을 넘기면, 못 물어본 항목의 채움값(중간값)이 그대로
+    // 표시되고 증감까지 그 값으로 계산돼 없던 하락이 만들어진다.
+    double? scoreOf(double Function(DailyAssessment) pick, String categoryKey) =>
+        (current.isMeasured && current.isCategoryComplete(categoryKey))
+            ? pick(current)
+            : null;
+
     final metricCards = [
       MetricSummaryCard(
         title: '우울 지표',
         subtitle: '낮을수록 안정 · 7일 추이',
-        score: current.depressionScore,
+        score: scoreOf((e) => e.depressionScore, '우울'),
         values: depressionValues,
         dates: metricDates,
         color: const Color(0xFF8A6DFF),
@@ -108,7 +116,7 @@ class DashboardScreen extends StatelessWidget {
       MetricSummaryCard(
         title: '인지 지표',
         subtitle: '높을수록 양호 · 7일 추이',
-        score: current.cognitiveScore,
+        score: scoreOf((e) => e.cognitiveScore, '인지기능'),
         values: cognitiveValues,
         dates: metricDates,
         color: const Color(0xFF2FB86E),
@@ -120,7 +128,7 @@ class DashboardScreen extends StatelessWidget {
       MetricSummaryCard(
         title: '정서 지표',
         subtitle: '높을수록 안정 · 7일 추이',
-        score: current.emotionalStability,
+        score: scoreOf((e) => e.emotionalStability, '불안'),
         values: emotionValues,
         dates: metricDates,
         color: const Color(0xFF6D7CFF),
@@ -132,7 +140,7 @@ class DashboardScreen extends StatelessWidget {
       MetricSummaryCard(
         title: '신체 위험 지표',
         subtitle: '낮을수록 안정 · 7일 추이',
-        score: current.healthRisk,
+        score: scoreOf((e) => e.healthRisk, '신체건강'),
         values: physicalRiskValues,
         dates: metricDates,
         color: const Color(0xFFFF8A3D),

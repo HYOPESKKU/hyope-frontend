@@ -6,7 +6,14 @@ import 'common_widgets.dart';
 class MetricSummaryCard extends StatelessWidget {
   final String title;
   final String subtitle;
-  final double score;
+  /// null이면 그 날 이 항목을 확인하지 못했다는 뜻이다.
+  ///
+  /// 통화가 끊겼거나 어르신이 답을 안 하면 서버는 그 카테고리를
+  /// incompleteCategories에 담고 점수는 중간값으로 채워 보낸다. 그 값을 그대로
+  /// 쓰면 9.0이던 인지 지표가 5.0으로 "떨어진" 것처럼 보이고 증감도 -4.0으로
+  /// 잡힌다. 실제로는 못 물어본 것이라, 숫자 대신 미확인으로 표시한다.
+  final double? score;
+
   /// null은 그 날 측정이 안 됐다는 뜻이다(DailyAssessment.isMeasured).
   final List<double?> values;
   final List<DateTime> dates;
@@ -30,20 +37,68 @@ class MetricSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 7일 전이 미측정이면 그 앞으로 거슬러 가장 가까운 측정값을 쓴다.
-    // null을 0으로 취급하면 증감이 엉뚱하게 커진다.
-    double previousWeek = score;
+    // 기준선은 7일 전. 그 날이 미측정이면 그 앞으로 거슬러 가장 가까운
+    // 측정값을 쓴다. null을 0으로 취급하면 증감이 엉뚱하게 커진다.
+    int? prevIndex;
     for (var i = values.length - 8; i >= 0; i--) {
-      final v = values[i];
-      if (v != null) {
-        previousWeek = v;
+      if (values[i] != null) {
+        prevIndex = i;
         break;
       }
     }
-    final diff = score - previousWeek;
-    final isBetter = lowGood ? diff <= 0 : diff >= 0;
-    final statusColor = isBetter ? const Color(0xFF2FB86E) : const Color(0xFFE74747);
-    final diffText = '${diff >= 0 ? '+' : ''}${diff.toStringAsFixed(1)}';
+
+    // 아직 일주일치가 안 쌓였으면 7일 전 지점 자체가 없다. 그렇다고 비교를
+    // 포기하면 며칠씩 아무 변화도 못 보여주므로, 가진 것 중 가장 오래된
+    // 측정값과 비교한다. 대신 라벨에 실제 비교 날짜를 적어 "7일 전"이라고
+    // 잘못 읽히지 않게 한다.
+    final isSevenDayBase = prevIndex != null;
+    if (prevIndex == null) {
+      for (var i = 0; i < values.length - 1; i++) {
+        if (values[i] != null) {
+          prevIndex = i;
+          break;
+        }
+      }
+    }
+
+    final previousWeek = prevIndex == null ? null : values[prevIndex];
+    // 오늘 이 항목을 못 물어봤으면(score == null) 증감을 낼 수 없다. 채움값으로
+    // 계산하면 없던 하락·상승이 만들어진다.
+    final currentScore = score;
+    final diff = (currentScore == null || previousWeek == null)
+        ? null
+        : currentScore - previousWeek;
+
+    // 비교 대상이 7일 전이 아니면 그 날짜를 그대로 보여준다.
+    final String compareLabel;
+    if (prevIndex == null || isSevenDayBase || dates.length != values.length) {
+      compareLabel = '7일 전 대비';
+    } else {
+      final d = dates[prevIndex];
+      compareLabel = '${d.month}/${d.day} 대비';
+    }
+    // 변화가 없는 것(유지)도 개선이 아니다. 다섯을 구분해 문구와 색을 따로 준다.
+    final String statusLabel;
+    final Color statusColor;
+    if (currentScore == null) {
+      statusLabel = '미확인';
+      statusColor = const Color(0xFF9AA2B4);
+    } else if (diff == null) {
+      statusLabel = '비교 전';
+      statusColor = const Color(0xFF9AA2B4);
+    } else if (diff == 0) {
+      statusLabel = '유지';
+      statusColor = const Color(0xFF9AA2B4);
+    } else if (lowGood ? diff < 0 : diff > 0) {
+      statusLabel = '개선';
+      statusColor = const Color(0xFF2FB86E);
+    } else {
+      statusLabel = '주의';
+      statusColor = const Color(0xFFE74747);
+    }
+    final diffText = diff == null
+        ? '—'
+        : '${diff >= 0 ? '+' : ''}${diff.toStringAsFixed(1)}';
     final chartStart = values.length > 7 ? values.length - 7 : 0;
     final chartValues = values.sublist(chartStart);
     final chartDates = dates.length == values.length ? dates.sublist(chartStart) : const <DateTime>[];
@@ -85,7 +140,7 @@ class MetricSummaryCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  isBetter ? '개선' : '주의',
+                  statusLabel,
                   style: TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w900,
@@ -127,20 +182,26 @@ class MetricSummaryCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
+              // 못 물어본 항목에 채움값을 숫자로 띄우면 보호자가 실제 점수로
+              // 읽는다. 값을 감추고 확인이 안 됐다는 사실만 남긴다.
               Text(
-                score.toStringAsFixed(1),
-                style: const TextStyle(
-                  fontSize: 24,
+                currentScore == null ? '미확인' : currentScore.toStringAsFixed(1),
+                style: TextStyle(
+                  fontSize: currentScore == null ? 18 : 24,
                   height: 1,
-                  color: Color(0xFF182033),
+                  color: currentScore == null
+                      ? const Color(0xFF9AA2B4)
+                      : const Color(0xFF182033),
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              const SizedBox(width: 4),
-              const Padding(
-                padding: EdgeInsets.only(bottom: 2),
-                child: Text('/10', style: TextStyle(color: Color(0xFF8A92A6))),
-              ),
+              if (currentScore != null) ...[
+                const SizedBox(width: 4),
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 2),
+                  child: Text('/10', style: TextStyle(color: Color(0xFF8A92A6))),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 5),
@@ -153,10 +214,12 @@ class MetricSummaryCard extends StatelessWidget {
           const SizedBox(height: 6),
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  '7일 전 대비',
-                  style: TextStyle(
+                  compareLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
                     fontSize: 10.5,
                     color: Color(0xFF8A92A6),
                     fontWeight: FontWeight.w700,
