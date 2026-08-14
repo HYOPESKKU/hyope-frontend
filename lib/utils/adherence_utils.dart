@@ -118,7 +118,7 @@ String riskDetailComment(
   if (mealRate < 100 || medicationRate < 100) signals.add('식사·복약 일부 누락');
 
   if (signals.isEmpty) {
-    return '현재 세부 지표는 전반적으로 안정 범위입니다. 다음 ARS 통화에서 기본 항목을 재확인하세요.';
+    return '현재 세부 지표는 전반적으로 안정 범위입니다. 다음 안부 전화에서 기본 항목을 재확인하세요.';
   }
   return '${signals.join(', ')} 항목이 종합 위험도에 반영되었습니다.';
 }

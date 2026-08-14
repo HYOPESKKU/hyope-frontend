@@ -121,8 +121,11 @@ class UserSettingsScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // "ARS"는 업계 용어라 보호자가 무슨 화면인지 알기 어렵다.
+                    // 시간만이 아니라 반복 간격·재시도·녹음 보관까지 묶여 있어
+                    // "전화 시간 설정"보다 넓은 이름을 쓴다.
                     SectionTitle(
-                      title: 'ARS 모니터링 설정',
+                      title: '안부 전화 설정',
                       trailing: _EditButton(onPressed: onEditRecipient),
                     ),
                     const SizedBox(height: 10),
