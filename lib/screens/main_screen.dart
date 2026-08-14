@@ -6,6 +6,7 @@ import '../services/assessment_service.dart';
 import '../services/auth_service.dart';
 import '../services/call_schedule_service.dart';
 import '../services/notification_service.dart';
+import '../services/profile_seen_store.dart';
 import '../services/recipient_service.dart';
 import '../utils/adherence_utils.dart';
 import '../utils/date_utils.dart';
@@ -53,6 +54,10 @@ class _MainScreenState extends State<MainScreen> {
   bool isCalendarExpanded = false;
   int selectedTabIndex = 0;
 
+  /// 통화로 갱신된 항목. 매 로드마다 저장된 "마지막으로 본 값"과 비교해 채운다.
+  final _seenStore = ProfileSeenStore();
+  Set<String> updatedProfileFields = const {};
+
   bool dailyNewsAlertEnabled = true;
   bool riskChangeAlertEnabled = true;
   bool emergencySmsEnabled = true;
@@ -86,10 +91,19 @@ Future<void> _loadAssessments() async {
     final refreshedRecipient = results[1] as RecipientSummary;
     final schedules = results[2] as List<CallSchedule>;
     final fetchedNotifications = results[3] as List<GuardianNotification>;
+
+    // 서버가 갱신 시각을 주지 않아 기기에 저장된 "마지막으로 본 값"과 비교한다.
+    // 실패해도 화면은 그대로 떠야 하므로 예외는 삼킨다(배지만 안 뜬다).
+    Set<String> changed = const {};
+    try {
+      changed = await _seenStore.updatedFields(refreshedRecipient);
+    } catch (_) {}
+
     if (!mounted) return;
     setState(() {
       assessments = result;
       currentRecipient = refreshedRecipient;
+      updatedProfileFields = changed;
       callSchedule = schedules.isEmpty ? null : schedules.first;
       notifications = fetchedNotifications;
       if (result.isNotEmpty) {
@@ -107,6 +121,16 @@ Future<void> _loadAssessments() async {
   } catch (e) {
     if (!mounted) return;
     setState(() => loadError = '에러: $e');
+  }
+}
+
+/// 배지를 눌렀을 때 현재 값을 "본 것"으로 기록한다.
+Future<void> _acknowledgeProfileUpdates() async {
+  setState(() => updatedProfileFields = const {});
+  try {
+    await _seenStore.markSeen(currentRecipient);
+  } catch (_) {
+    // 기록에 실패하면 다음 로드에서 배지가 다시 뜬다. 화면을 막을 일은 아니다.
   }
 }
 
@@ -316,6 +340,8 @@ Future<void> _deleteNotification(int id) async {
             onNotificationTap: () {
               setState(() => selectedTabIndex = 2);
             },
+            updatedProfileFields: updatedProfileFields,
+            onAcknowledgeProfileUpdates: _acknowledgeProfileUpdates,
             hasUnreadNotification:
                 (notifications ?? const []).any((n) => !n.isRead),
           ),

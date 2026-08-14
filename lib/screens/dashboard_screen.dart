@@ -7,6 +7,7 @@ import '../widgets/adherence_widgets.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/header_section.dart';
 import '../widgets/metric_widgets.dart';
+import '../services/profile_seen_store.dart';
 import '../widgets/recipient_info_card.dart';
 import '../widgets/risk_widgets.dart';
 
@@ -25,6 +26,11 @@ class DashboardScreen extends StatelessWidget {
   final VoidCallback? onNotificationTap;
   final bool hasUnreadNotification;
 
+  /// 통화로 자동 갱신된 항목(ProfileSeenStore.field*). 대상자 정보 카드가
+  /// 여기에 "통화로 업데이트됨" 배지를 띄운다.
+  final Set<String> updatedProfileFields;
+  final VoidCallback? onAcknowledgeProfileUpdates;
+
   const DashboardScreen({
     super.key,
     required this.recipient,
@@ -40,6 +46,8 @@ class DashboardScreen extends StatelessWidget {
     required this.onDateSelected,
     this.onNotificationTap,
     this.hasUnreadNotification = false,
+    this.updatedProfileFields = const {},
+    this.onAcknowledgeProfileUpdates,
   });
 
   // 선택된 날짜가 없으면 최신(오늘) 데이터를 기본으로 보여줌
@@ -188,7 +196,11 @@ class DashboardScreen extends StatelessWidget {
 
                       // 위험도를 본 직후 "이 사람이 누구였는지"를 바로 확인할 수
                       // 있게 붙여 뒀다.
-                      RecipientInfoCard(recipient: recipient),
+                      RecipientInfoCard(
+                        recipient: recipient,
+                        updatedFields: updatedProfileFields,
+                        onAcknowledgeUpdates: onAcknowledgeProfileUpdates,
+                      ),
                       const SizedBox(height: 14),
 
                       // 접이식 캘린더
