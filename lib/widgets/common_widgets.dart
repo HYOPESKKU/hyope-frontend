@@ -192,25 +192,27 @@ class SettingsInfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 이름·연락처·생년월일처럼 확인용으로 읽는 값들이라 13.5는 작았다.
+    // 아이콘과 세로 여백도 같이 키워 글자만 커져 답답해 보이지 않게 한다.
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         children: [
           Container(
-            width: 38,
-            height: 38,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
               color: const Color(0xFFF3F5FA),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(13),
             ),
-            child: Icon(icon, size: 20, color: const Color(0xFF687085)),
+            child: Icon(icon, size: 22, color: const Color(0xFF687085)),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               title,
               style: const TextStyle(
-                fontSize: 13.5,
+                fontSize: 15.5,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF687085),
               ),
@@ -222,7 +224,7 @@ class SettingsInfoRow extends StatelessWidget {
               textAlign: TextAlign.right,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                fontSize: 13.5,
+                fontSize: 16,
                 fontWeight: FontWeight.w900,
                 color: Color(0xFF263044),
               ),
