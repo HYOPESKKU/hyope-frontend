@@ -79,9 +79,7 @@ AdherenceAggregate aggregateAdherence(DailyAssessment? assessment, AdherenceType
 
   if (records.isEmpty) return AdherenceAggregate.notNeeded;
   final doneCount = records.where((record) => record.isDone).length;
-  if (doneCount == records.length) return AdherenceAggregate.done;
-  if (doneCount == 0) return AdherenceAggregate.missed;
-  return AdherenceAggregate.partial;
+  return doneCount > 0 ? AdherenceAggregate.done : AdherenceAggregate.missed;
 }
 
 AdherenceStatusInfo statusFromRecord(AdherenceRecord? record) {

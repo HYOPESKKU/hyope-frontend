@@ -189,7 +189,6 @@ class AdherenceCalendarCard extends StatelessWidget {
                         runSpacing: 8,
                         children: const [
                           StatusLegend(label: '완료', color: Color(0xFF2FB86E)),
-                          StatusLegend(label: '일부 완료', color: Color(0xFFE5A900)),
                           StatusLegend(label: '미완료', color: Color(0xFFE74747)),
                           StatusLegend(label: '미확인', color: Color(0xFF9AA2B4)),
                         ],
@@ -571,45 +570,68 @@ class SelectedDateAdherenceSection extends StatelessWidget {
             style: TextStyle(color: Color(0xFF8A92A6)),
           )
         else
-          Column(
-            children: Slot.values.map((slot) {
-              final meal = findAdherence(assessment!, AdherenceType.meal, slot);
-              final medication = findAdherence(assessment!, AdherenceType.medication, slot);
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Container(
-                  padding: const EdgeInsets.all(11),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF7F8FC),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFE8ECF5)),
-                  ),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 44,
-                        child: Text(
-                          slot.label,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF333B4F),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: AdherenceStatusTile(label: '식사', record: meal),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: AdherenceStatusTile(label: '복약', record: medication),
-                      ),
-                    ],
+          Container(
+            padding: const EdgeInsets.all(11),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7F8FC),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE8ECF5)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _DayStatusTile(
+                    label: '식사',
+                    aggregate: aggregateAdherence(assessment, AdherenceType.meal),
                   ),
                 ),
-              );
-            }).toList(),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _DayStatusTile(
+                    label: '복약',
+                    aggregate: aggregateAdherence(assessment, AdherenceType.medication),
+                  ),
+                ),
+              ],
+            ),
           ),
+      ],
+    );
+  }
+}
+
+class _DayStatusTile extends StatelessWidget {
+  final String label;
+  final AdherenceAggregate aggregate;
+
+  const _DayStatusTile({required this.label, required this.aggregate});
+
+  static const _statusInfo = {
+    AdherenceAggregate.done: (Icons.check_circle_rounded, Color(0xFF2FB86E), '완료'),
+    AdherenceAggregate.missed: (Icons.cancel_rounded, Color(0xFFE74747), '미완료'),
+    AdherenceAggregate.notNeeded: (Icons.help_outline_rounded, Color(0xFF9AA2B4), '미확인'),
+    AdherenceAggregate.unknown: (Icons.help_outline_rounded, Color(0xFF9AA2B4), '미확인'),
+  };
+  
+  @override
+  Widget build(BuildContext context) {
+    final (icon, color, text) = _statusInfo[aggregate]!;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 18, color: color),
+        const SizedBox(width: 5),
+        Flexible(
+          child: Text(
+            '$label $text',
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+        ),
       ],
     );
   }
