@@ -671,10 +671,12 @@ class ConversationMessage {
   }
 }
 
-enum NotificationCategory { callMissed, callFailed, highRisk, suddenSpike, incompleteAnalysis, newReport, dailyCallMissing }
+enum NotificationCategory { callMissed, callFailed, highRisk, suddenSpike, incompleteAnalysis, newReport, dailyCallMissing, emergency }
 
 NotificationCategory parseNotificationCategory(String value) {
   switch (value.toUpperCase()) {
+    case 'EMERGENCY':
+      return NotificationCategory.emergency;
     case 'CALL_FAILED':
       return NotificationCategory.callFailed;
     case 'HIGH_RISK':

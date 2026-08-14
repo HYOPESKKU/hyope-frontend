@@ -26,7 +26,8 @@ class NotificationSettingsScreen extends StatelessWidget {
   bool _isRiskChange(NotificationCategory type) {
     return type == NotificationCategory.highRisk ||
         type == NotificationCategory.suddenSpike ||
-        type == NotificationCategory.incompleteAnalysis;
+        type == NotificationCategory.incompleteAnalysis ||
+        type == NotificationCategory.emergency;
   }
 
   @override
