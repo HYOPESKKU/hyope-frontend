@@ -99,6 +99,8 @@ class DashboardScreen extends StatelessWidget {
     final emotionValues = valuesOf((e) => e.emotionalStability, '불안');
     final physicalRiskValues = valuesOf((e) => e.healthRisk, '신체건강');
     final current = displayedAssessment!;
+    // 캘린더에서 고른 날의 위치. 지표 카드가 이 지점 기준으로 증감을 낸다.
+    final currentIndex = assessments.indexOf(current);
 
     // 카드에 크게 띄우는 현재 점수도 같은 기준으로 거른다. 그래프만 null로
     // 끊고 점수는 원본을 넘기면, 못 물어본 항목의 채움값(중간값)이 그대로
@@ -115,6 +117,7 @@ class DashboardScreen extends StatelessWidget {
         score: scoreOf((e) => e.depressionScore, '우울'),
         values: depressionValues,
         dates: metricDates,
+        currentIndex: currentIndex,
         color: const Color(0xFF8A6DFF),
         icon: Icons.sentiment_dissatisfied_outlined,
         lowGood: true,
@@ -127,6 +130,7 @@ class DashboardScreen extends StatelessWidget {
         score: scoreOf((e) => e.cognitiveScore, '인지기능'),
         values: cognitiveValues,
         dates: metricDates,
+        currentIndex: currentIndex,
         color: const Color(0xFF2FB86E),
         icon: Icons.psychology_alt_outlined,
         lowGood: false,
@@ -139,6 +143,7 @@ class DashboardScreen extends StatelessWidget {
         score: scoreOf((e) => e.emotionalStability, '불안'),
         values: emotionValues,
         dates: metricDates,
+        currentIndex: currentIndex,
         color: const Color(0xFF6D7CFF),
         icon: Icons.mood_outlined,
         lowGood: false,
@@ -151,6 +156,7 @@ class DashboardScreen extends StatelessWidget {
         score: scoreOf((e) => e.healthRisk, '신체건강'),
         values: physicalRiskValues,
         dates: metricDates,
+        currentIndex: currentIndex,
         color: const Color(0xFFFF8A3D),
         icon: Icons.monitor_heart_outlined,
         lowGood: true,

@@ -17,6 +17,13 @@ class MetricSummaryCard extends StatelessWidget {
   /// null은 그 날 측정이 안 됐다는 뜻이다(DailyAssessment.isMeasured).
   final List<double?> values;
   final List<DateTime> dates;
+
+  /// values에서 지금 화면에 띄운 날의 위치. 증감을 이 지점 기준으로 계산한다.
+  ///
+  /// 캘린더에서 과거 날짜를 고르면 그 날 기준으로 비교해야 한다. 또 이 값보다
+  /// 앞선 것만 비교 대상으로 삼아야 자기 자신과 비교하는 일이 없다.
+  final int currentIndex;
+
   final Color color;
   final IconData icon;
   final bool lowGood;
@@ -29,6 +36,7 @@ class MetricSummaryCard extends StatelessWidget {
     required this.score,
     required this.values,
     required this.dates,
+    required this.currentIndex,
     required this.color,
     required this.icon,
     required this.lowGood,
@@ -37,10 +45,13 @@ class MetricSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 기준선은 7일 전. 그 날이 미측정이면 그 앞으로 거슬러 가장 가까운
-    // 측정값을 쓴다. null을 0으로 취급하면 증감이 엉뚱하게 커진다.
+    // 기준선은 보고 있는 날의 7일 전. 그 날이 미측정이면 그 앞으로 거슬러
+    // 가장 가까운 측정값을 쓴다. null을 0으로 취급하면 증감이 엉뚱하게 커진다.
+    //
+    // 기준을 values의 끝이 아니라 currentIndex로 잡는 이유는, 캘린더에서 과거
+    // 날짜를 고르면 그 날 기준으로 비교해야 하기 때문이다.
     int? prevIndex;
-    for (var i = values.length - 8; i >= 0; i--) {
+    for (var i = currentIndex - 7; i >= 0; i--) {
       if (values[i] != null) {
         prevIndex = i;
         break;
@@ -48,12 +59,15 @@ class MetricSummaryCard extends StatelessWidget {
     }
 
     // 아직 일주일치가 안 쌓였으면 7일 전 지점 자체가 없다. 그렇다고 비교를
-    // 포기하면 며칠씩 아무 변화도 못 보여주므로, 가진 것 중 가장 오래된
-    // 측정값과 비교한다. 대신 라벨에 실제 비교 날짜를 적어 "7일 전"이라고
-    // 잘못 읽히지 않게 한다.
+    // 포기하면 며칠씩 아무 변화도 못 보여주므로, 보고 있는 날보다 앞선 것 중
+    // 가장 오래된 측정값과 비교한다. 대신 라벨에 실제 비교 날짜를 적어
+    // "7일 전"이라고 잘못 읽히지 않게 한다.
+    //
+    // currentIndex 미만으로 제한하는 게 중요하다. 예전에는 0부터 훑어서, 가장
+    // 오래된 날을 선택하면 자기 자신과 비교해 모든 지표가 "유지 +0.0"이 됐다.
     final isSevenDayBase = prevIndex != null;
     if (prevIndex == null) {
-      for (var i = 0; i < values.length - 1; i++) {
+      for (var i = 0; i < currentIndex; i++) {
         if (values[i] != null) {
           prevIndex = i;
           break;
