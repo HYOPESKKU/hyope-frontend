@@ -432,31 +432,13 @@ class AxisLineChartPainter extends CustomPainter {
     required this.color,
   });
 
-  // 데이터 범위에 맞춰 y축 최소/최대값을 0.5 단위로 계산 (여유값 포함)
-  (double, double) get _yRange {
-    // 측정된 값만으로 범위를 잡는다. 미측정 지점(null)을 0으로 취급하면
-    // y축이 불필요하게 넓어져 실제 변화가 납작하게 보인다.
-    final measured = values.whereType<double>().toList();
-    if (measured.isEmpty) return (0.0, 10.0);
-
-    final minValue = measured.reduce((a, b) => a < b ? a : b);
-    final maxValue = measured.reduce((a, b) => a > b ? a : b);
-
-    double yMin = (((minValue - 0.7) / 0.5).floor() * 0.5);
-    double yMax = (((maxValue + 0.7) / 0.5).ceil() * 0.5);
-
-    yMin = yMin.clamp(0.0, 10.0);
-    yMax = yMax.clamp(0.0, 10.0);
-
-    // 최소 폭 2.0은 보장 (데이터가 거의 평평할 때 그래프가 너무 납작해지는 것 방지)
-    if (yMax - yMin < 2.0) {
-      final mid = (yMin + yMax) / 2;
-      yMin = (mid - 1.0).clamp(0.0, 10.0);
-      yMax = (mid + 1.0).clamp(0.0, 10.0);
-    }
-
-    return (yMin, yMax);
-  }
+  /// y축은 항상 0~10 고정이다.
+  ///
+  /// 예전에는 측정값 범위에 맞춰 축을 좁혔는데, 그러면 같은 지표라도 기간마다
+  /// 축이 달라져 두 기간을 비교할 수 없었다. 1.0과 7.5가 각각 축 바닥과
+  /// 천장에 붙어 보여, 실제 점수 차이보다 훨씬 크게 움직인 것처럼 읽힌다.
+  /// 점수 자체가 0~10 척도이므로 축도 그대로 두는 편이 정직하다.
+  (double, double) get _yRange => (0.0, 10.0);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -470,7 +452,8 @@ class AxisLineChartPainter extends CustomPainter {
     final chartBottom = size.height - bottomAxisHeight;
 
     final (yMin, yMax) = _yRange;
-    const yStep = 0.5;
+    // 눈금은 1 단위. 0.5까지 찍으면 21줄이 들어가 그래프보다 눈금이 더 눈에 띈다.
+    const yStep = 1.0;
     final ySteps = ((yMax - yMin) / yStep).round();
 
     final gridPaint = Paint()

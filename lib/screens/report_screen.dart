@@ -357,40 +357,81 @@ class _AverageScoresCard extends StatelessWidget {
         children: [
           const SectionTitle(title: '기간 평균 점수'),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: items.map((item) {
-              return Container(
-                width: 140,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: item.$3.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: item.$3.withOpacity(0.18)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.$1,
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF7A8294)),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      item.$2.toStringAsFixed(1),
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: item.$3),
-                    ),
-                  ],
-                ),
+          // 항목이 5개라 2열로 깔면 마지막 하나가 혼자 남아 오른쪽이 빈다.
+          // 종합 위험도는 나머지를 요약한 값이니 한 줄 전체를 주고, 세부 지표
+          // 4개를 2x2로 둔다. 폭을 고정값(140)으로 두면 화면 너비에 따라
+          // 오른쪽이 남으므로 실제 폭에서 계산한다.
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const gap = 10.0;
+              final halfWidth = (constraints.maxWidth - gap) / 2;
+
+              return Column(
+                children: [
+                  _ScoreBox(item: items.first, width: constraints.maxWidth),
+                  const SizedBox(height: gap),
+                  Wrap(
+                    spacing: gap,
+                    runSpacing: gap,
+                    children: items
+                        .skip(1)
+                        .map((item) => _ScoreBox(item: item, width: halfWidth))
+                        .toList(),
+                  ),
+                ],
               );
-            }).toList(),
+            },
           ),
         ],
       ),
     );
   }
 }
+
+/// 기간 평균 점수 한 칸. (이름, 값, 색) 튜플을 그대로 받는다.
+class _ScoreBox extends StatelessWidget {
+  final (String, double, Color) item;
+  final double width;
+
+  const _ScoreBox({required this.item, required this.width});
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, value, color) = item;
+    return Container(
+      width: width,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withOpacity(0.18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF7A8294),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value.toStringAsFixed(1),
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 
 class _TrendCard extends StatelessWidget {
   final List<DailyAssessment> data;
