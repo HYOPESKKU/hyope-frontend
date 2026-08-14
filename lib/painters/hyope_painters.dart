@@ -249,25 +249,24 @@ class MiniLineChartPainter extends CustomPainter {
         ? (chartLeft + chartRight) / 2
         : chartLeft + (chartRight - chartLeft) * i / (values.length - 1);
 
-    // 측정된 구간만 이어 그린다. 미측정 지점에서 path를 끊는다.
+    // 선은 끊지 않는다. 미측정 지점은 0 위치(기준선)를 지나가게 그려 흐름이
+    // 이어지게 한다.
+    //
+    // 여기서 0으로 두는 것은 그리기 좌표에 한한다. 점수·증감 계산은
+    // MetricSummaryCard가 values의 null을 건너뛰며 따로 하므로 영향이 없다.
+    // 미측정인 날은 아래에서 속이 빈 회색 점으로 따로 표시해 측정된 날과
+    // 구분되게 남겨 둔다.
     final path = Path();
-    final points = <Offset?>[];
+    final points = <Offset?>[];   // null = 그 날 미측정 (표시용 구분에만 쓴다)
     var penDown = false;
 
     for (int i = 0; i < values.length; i++) {
       final x = xAt(i);
       final value = values[i];
 
-      if (value == null) {
-        points.add(null);
-        penDown = false; // 다음 측정값에서 선을 새로 시작한다
-        continue;
-      }
-
-      final normalized = (value / 10.0).clamp(0.0, 1.0).toDouble();
+      final normalized = ((value ?? 0.0) / 10.0).clamp(0.0, 1.0).toDouble();
       final y = chartBottom - normalized * (chartBottom - chartTop);
-      final point = Offset(x, y);
-      points.add(point);
+      points.add(value == null ? null : Offset(x, y));
 
       if (penDown) {
         path.lineTo(x, y);
@@ -299,16 +298,20 @@ class MiniLineChartPainter extends CustomPainter {
       if (point != null) canvas.drawCircle(point, dotRadius, dotPaint);
     }
 
-    // 미측정 지점은 기준선 위에 회색 빈 점으로 표시한다. 아무것도 안 그리면
-    // 그 날 통화가 없었는지 화면 오류인지 구분이 안 된다.
-    final missingPaint = Paint()
+    // 미측정 지점은 선 위에 속이 빈 회색 점으로 표시한다. 선을 이어 그리므로
+    // 표시가 없으면 그 날도 0점을 측정한 것처럼 읽힌다.
+    //
+    // 선 위에 겹쳐 그려지니 안쪽을 흰색으로 채워 "비어 있음"이 드러나게 한다.
+    final missingFill = Paint()..color = Colors.white;
+    final missingStroke = Paint()
       ..color = const Color(0xFFC7CDDA)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
     for (int i = 0; i < points.length; i++) {
       if (points[i] != null) continue;
-      final x = xAt(i);
-      canvas.drawCircle(Offset(x, chartBottom - 3), 2.2, missingPaint);
+      final center = Offset(xAt(i), chartBottom);
+      canvas.drawCircle(center, 2.6, missingFill);
+      canvas.drawCircle(center, 2.6, missingStroke);
     }
 
     if (showDateLabels && dates.length == values.length) {
@@ -508,37 +511,33 @@ class AxisLineChartPainter extends CustomPainter {
       );
     }
 
-    // 라인 — 측정된 구간만 이어 그린다. 미측정 지점에서 끊어 별개 구간으로
-    // 나눈다. 채우기도 구간별로 따로 그려야 끊긴 자리가 메워지지 않는다.
+    // 라인 — 끊지 않고 한 줄로 잇는다. 미측정 지점은 0으로 두는데, yMin이
+    // 0보다 클 수 있어(측정값만으로 범위를 잡으므로) 정규화가 음수가 되고
+    // clamp에 걸려 x축 바닥에 붙는다. 대시보드 카드와 같은 위치다.
+    //
+    // 0으로 두는 것은 그리기 좌표에 한한다. y축 범위(_yRange)는 여전히 측정값
+    // 만으로 계산하므로 축이 0까지 늘어나 그래프가 납작해지지 않는다.
     final path = Path();
-    final points = <Offset?>[];
-    final segments = <List<Offset>>[];
-    var current = <Offset>[];
+    final points = <Offset?>[];   // null = 미측정 (표시 구분에만 쓴다)
+    final line = <Offset>[];
 
     for (int i = 0; i < values.length; i++) {
       final x = chartLeft + (chartRight - chartLeft) * i / (values.length - 1);
       final value = values[i];
 
-      if (value == null) {
-        points.add(null);
-        if (current.length > 1) segments.add(current);
-        current = <Offset>[];
-        continue;
-      }
-
-      final normalized = ((value - yMin) / (yMax - yMin)).clamp(0.0, 1.0);
+      final normalized = (((value ?? 0.0) - yMin) / (yMax - yMin)).clamp(0.0, 1.0);
       final y = chartBottom - normalized * (chartBottom - chartTop);
       final point = Offset(x, y);
-      points.add(point);
+      points.add(value == null ? null : point);
 
-      if (current.isEmpty) {
+      if (line.isEmpty) {
         path.moveTo(x, y);
       } else {
         path.lineTo(x, y);
       }
-      current.add(point);
+      line.add(point);
     }
-    if (current.length > 1) segments.add(current);
+    final segments = line.length > 1 ? [line] : const <List<Offset>>[];
 
     final fillShader = LinearGradient(
       begin: Alignment.topCenter,
@@ -574,16 +573,19 @@ class AxisLineChartPainter extends CustomPainter {
       if (p != null) canvas.drawCircle(p, 2.6, Paint()..color = color);
     }
 
-    // 미측정 지점은 x축 위 회색 빈 점으로 남긴다. 아무 표시도 없으면 그 날
-    // 통화가 없었는지 화면 오류인지 구분이 안 된다.
-    final missingPaint = Paint()
+    // 미측정 지점은 선 위에 속이 빈 회색 점으로 남긴다. 선을 이어 그리므로
+    // 표시가 없으면 그 날도 바닥값을 측정한 것처럼 읽힌다.
+    final missingFill = Paint()..color = Colors.white;
+    final missingStroke = Paint()
       ..color = const Color(0xFFC7CDDA)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.4;
     for (int i = 0; i < points.length; i++) {
       if (points[i] != null) continue;
       final x = chartLeft + (chartRight - chartLeft) * i / (values.length - 1);
-      canvas.drawCircle(Offset(x, chartBottom - 4), 2.8, missingPaint);
+      final center = Offset(x, chartBottom);
+      canvas.drawCircle(center, 3.0, missingFill);
+      canvas.drawCircle(center, 3.0, missingStroke);
     }
   }
 
