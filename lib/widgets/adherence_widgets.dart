@@ -199,7 +199,7 @@ class AdherenceCalendarCard extends StatelessWidget {
           if (!showStats && selectedDate == null) ...[
             const SizedBox(height: 10),
             const Text(
-              '날짜를 선택하면 아침·점심·저녁 복약/식사 이행 상세가 표시됩니다.',
+              '날짜를 선택하면 그 날의 복약·식사 이행 상세가 표시됩니다.',
               style: TextStyle(
                 color: Color(0xFF8A92A6),
                 fontSize: 12.5,
