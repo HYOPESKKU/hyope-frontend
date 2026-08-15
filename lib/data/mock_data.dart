@@ -147,9 +147,12 @@ class MockData {
     int assessmentId,
     int index,
   ) {
+    // 백엔드가 식사·복약을 하루 한 건씩만 저장한다(CallResultService, 2026-08-14).
+    // 통화가 하루 한 번이라 끼니를 구분할 근거가 없어서다. 목 데이터도 같은
+    // 형태로 둬야 목 모드에서만 화면이 달라지지 않는다.
     final mealMiss = index % 7 == 0;
     final medMiss = index % 11 == 0;
-    final unknownDinner = index % 13 == 0;
+    final mealUnknown = index % 13 == 0;
 
     return [
       AdherenceRecord(
@@ -157,48 +160,16 @@ class MockData {
         assessmentId: assessmentId,
         adherenceType: AdherenceType.meal,
         slot: Slot.breakfast,
-        isNeeded: true,
-        isDone: !mealMiss,
+        isNeeded: !mealUnknown,
+        isDone: !mealUnknown && !mealMiss,
       ),
       AdherenceRecord(
         id: assessmentId * 10 + 2,
-        assessmentId: assessmentId,
-        adherenceType: AdherenceType.meal,
-        slot: Slot.lunch,
-        isNeeded: true,
-        isDone: true,
-      ),
-      AdherenceRecord(
-        id: assessmentId * 10 + 3,
-        assessmentId: assessmentId,
-        adherenceType: AdherenceType.meal,
-        slot: Slot.dinner,
-        isNeeded: !unknownDinner,
-        isDone: !unknownDinner,
-      ),
-      AdherenceRecord(
-        id: assessmentId * 10 + 4,
         assessmentId: assessmentId,
         adherenceType: AdherenceType.medication,
         slot: Slot.breakfast,
         isNeeded: true,
         isDone: !medMiss,
-      ),
-      AdherenceRecord(
-        id: assessmentId * 10 + 5,
-        assessmentId: assessmentId,
-        adherenceType: AdherenceType.medication,
-        slot: Slot.lunch,
-        isNeeded: false,
-        isDone: false,
-      ),
-      AdherenceRecord(
-        id: assessmentId * 10 + 6,
-        assessmentId: assessmentId,
-        adherenceType: AdherenceType.medication,
-        slot: Slot.dinner,
-        isNeeded: true,
-        isDone: index % 5 != 0,
       ),
     ];
   }

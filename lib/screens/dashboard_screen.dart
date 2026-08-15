@@ -7,6 +7,7 @@ import '../widgets/adherence_widgets.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/header_section.dart';
 import '../widgets/metric_widgets.dart';
+import '../services/profile_seen_store.dart';
 import '../widgets/recipient_info_card.dart';
 import '../widgets/risk_widgets.dart';
 
@@ -25,6 +26,11 @@ class DashboardScreen extends StatelessWidget {
   final VoidCallback? onNotificationTap;
   final bool hasUnreadNotification;
 
+  /// 통화로 자동 갱신된 항목(ProfileSeenStore.field*). 대상자 정보 카드가
+  /// 여기에 "통화로 업데이트됨" 배지를 띄운다.
+  final Set<String> updatedProfileFields;
+  final VoidCallback? onAcknowledgeProfileUpdates;
+
   const DashboardScreen({
     super.key,
     required this.recipient,
@@ -40,6 +46,8 @@ class DashboardScreen extends StatelessWidget {
     required this.onDateSelected,
     this.onNotificationTap,
     this.hasUnreadNotification = false,
+    this.updatedProfileFields = const {},
+    this.onAcknowledgeProfileUpdates,
   });
 
   // 선택된 날짜가 없으면 최신(오늘) 데이터를 기본으로 보여줌
@@ -91,6 +99,8 @@ class DashboardScreen extends StatelessWidget {
     final emotionValues = valuesOf((e) => e.emotionalStability, '불안');
     final physicalRiskValues = valuesOf((e) => e.healthRisk, '신체건강');
     final current = displayedAssessment!;
+    // 캘린더에서 고른 날의 위치. 지표 카드가 이 지점 기준으로 증감을 낸다.
+    final currentIndex = assessments.indexOf(current);
 
     // 카드에 크게 띄우는 현재 점수도 같은 기준으로 거른다. 그래프만 null로
     // 끊고 점수는 원본을 넘기면, 못 물어본 항목의 채움값(중간값)이 그대로
@@ -107,6 +117,7 @@ class DashboardScreen extends StatelessWidget {
         score: scoreOf((e) => e.depressionScore, '우울'),
         values: depressionValues,
         dates: metricDates,
+        currentIndex: currentIndex,
         color: const Color(0xFF8A6DFF),
         icon: Icons.sentiment_dissatisfied_outlined,
         lowGood: true,
@@ -119,6 +130,7 @@ class DashboardScreen extends StatelessWidget {
         score: scoreOf((e) => e.cognitiveScore, '인지기능'),
         values: cognitiveValues,
         dates: metricDates,
+        currentIndex: currentIndex,
         color: const Color(0xFF2FB86E),
         icon: Icons.psychology_alt_outlined,
         lowGood: false,
@@ -131,6 +143,7 @@ class DashboardScreen extends StatelessWidget {
         score: scoreOf((e) => e.emotionalStability, '불안'),
         values: emotionValues,
         dates: metricDates,
+        currentIndex: currentIndex,
         color: const Color(0xFF6D7CFF),
         icon: Icons.mood_outlined,
         lowGood: false,
@@ -143,6 +156,7 @@ class DashboardScreen extends StatelessWidget {
         score: scoreOf((e) => e.healthRisk, '신체건강'),
         values: physicalRiskValues,
         dates: metricDates,
+        currentIndex: currentIndex,
         color: const Color(0xFFFF8A3D),
         icon: Icons.monitor_heart_outlined,
         lowGood: true,
@@ -188,7 +202,11 @@ class DashboardScreen extends StatelessWidget {
 
                       // 위험도를 본 직후 "이 사람이 누구였는지"를 바로 확인할 수
                       // 있게 붙여 뒀다.
-                      RecipientInfoCard(recipient: recipient),
+                      RecipientInfoCard(
+                        recipient: recipient,
+                        updatedFields: updatedProfileFields,
+                        onAcknowledgeUpdates: onAcknowledgeProfileUpdates,
+                      ),
                       const SizedBox(height: 14),
 
                       // 접이식 캘린더

@@ -1,13 +1,25 @@
 import 'package:flutter/material.dart';
 
 import '../models/hyope_models.dart';
+import '../services/profile_seen_store.dart';
 
 class RecipientInfoCard extends StatelessWidget {
   final RecipientSummary recipient;
 
+  /// 마지막으로 본 뒤 통화로 바뀐 항목들(ProfileSeenStore.field* 값).
+  ///
+  /// 취미·최근 근황은 보호자가 입력하지 않고 통화 중 AI가 채운다. 표시가
+  /// 없으면 값이 조용히 바뀌어 있어 무엇이 새로 생겼는지 알 수 없다.
+  final Set<String> updatedFields;
+
+  /// 배지를 눌러 "확인함"으로 표시할 때. null이면 배지를 눌러도 반응하지 않는다.
+  final VoidCallback? onAcknowledgeUpdates;
+
   const RecipientInfoCard({
     super.key,
     required this.recipient,
+    this.updatedFields = const {},
+    this.onAcknowledgeUpdates,
   });
 
   @override
@@ -52,6 +64,8 @@ class RecipientInfoCard extends StatelessWidget {
           _InfoRow(
             icon: Icons.palette_outlined,
             label: '취미',
+            isUpdated: updatedFields.contains(ProfileSeenStore.fieldHobbies),
+            onAcknowledge: onAcknowledgeUpdates,
             child: recipient.hobbies.isNotEmpty
                 ? Wrap(
                     spacing: 6,
@@ -66,6 +80,9 @@ class RecipientInfoCard extends StatelessWidget {
             icon: Icons.event_note_outlined,
             label: '최근 근황',
             isLast: true,
+            isUpdated:
+                updatedFields.contains(ProfileSeenStore.fieldRecentEvents),
+            onAcknowledge: onAcknowledgeUpdates,
             child: recipient.recentEvents.isNotEmpty
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -136,12 +153,16 @@ class _InfoRow extends StatelessWidget {
   final String label;
   final Widget child;
   final bool isLast;
+  final bool isUpdated;
+  final VoidCallback? onAcknowledge;
 
   const _InfoRow({
     required this.icon,
     required this.label,
     required this.child,
     this.isLast = false,
+    this.isUpdated = false,
+    this.onAcknowledge,
   });
 
   @override
@@ -165,8 +186,62 @@ class _InfoRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 4),
-          Expanded(child: child),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isUpdated) ...[
+                  _UpdatedBadge(onTap: onAcknowledge),
+                  const SizedBox(height: 5),
+                ],
+                child,
+              ],
+            ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+/// "통화로 새로 채워졌다"는 표시.
+///
+/// 눌러서 없앨 수 있게 한 이유는, 화면을 열자마자 사라지면 스크롤로 지나쳤을 때
+/// 다시 볼 방법이 없기 때문이다. 보호자가 직접 확인했다고 눌러야 사라진다.
+class _UpdatedBadge extends StatelessWidget {
+  final VoidCallback? onTap;
+
+  const _UpdatedBadge({this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: const Color(0xFF4F80FF).withOpacity(0.12),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.auto_awesome, size: 12, color: Color(0xFF4F80FF)),
+            const SizedBox(width: 4),
+            const Text(
+              '통화로 업데이트됨',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF4F80FF),
+              ),
+            ),
+            if (onTap != null) ...[
+              const SizedBox(width: 4),
+              const Icon(Icons.close, size: 12, color: Color(0xFF4F80FF)),
+            ],
+          ],
+        ),
       ),
     );
   }
