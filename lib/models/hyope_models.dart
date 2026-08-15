@@ -144,6 +144,10 @@ class UserProfile {
   final String phoneNumber;
   final String email;
 
+  final bool dailyNewsAlertEnabled;
+  final bool riskChangeAlertEnabled;
+  final bool emergencyAlertEnabled;
+
   const UserProfile({
     required this.id,
     required this.role,
@@ -151,6 +155,9 @@ class UserProfile {
     required this.lastName,
     required this.phoneNumber,
     required this.email,
+    this.dailyNewsAlertEnabled = true,
+    this.riskChangeAlertEnabled = true,
+    this.emergencyAlertEnabled = true,
   });
 
   /// 화면 표시용으로 합친 이름.
@@ -168,6 +175,9 @@ class UserProfile {
     String? lastName,
     String? phoneNumber,
     String? email,
+    bool? dailyNewsAlertEnabled,
+    bool? riskChangeAlertEnabled,
+    bool? emergencyAlertEnabled,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -176,6 +186,9 @@ class UserProfile {
       lastName: lastName ?? this.lastName,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       email: email ?? this.email,
+      dailyNewsAlertEnabled: dailyNewsAlertEnabled ?? this.dailyNewsAlertEnabled,
+      riskChangeAlertEnabled: riskChangeAlertEnabled ?? this.riskChangeAlertEnabled,
+      emergencyAlertEnabled: emergencyAlertEnabled ?? this.emergencyAlertEnabled,
     );
   }
 }

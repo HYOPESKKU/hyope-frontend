@@ -34,6 +34,28 @@ class GuardianService {
     return _fromJson(json);
   }
 
+  /// 알림 설정 3종(오늘의 소식/위험도 변동/위급상황) 갱신.
+  ///
+  /// 나머지 필드는 요청 바디에 아예 안 실어서 보낸다 — 서버 GuardianPatchRequest는
+  /// 값이 없는 필드를 건드리지 않는 부분 patch라, 이렇게만 보내도 이름/연락처 등은
+  /// 그대로 유지된다.
+  Future<UserProfile> updateNotificationSettings({
+    required int id,
+    required bool dailyNewsAlertEnabled,
+    required bool riskChangeAlertEnabled,
+    required bool emergencyAlertEnabled,
+  }) async {
+    final json = await _client.patch(
+      '/guardians/$id',
+      body: {
+        'dailyNewsAlertEnabled': dailyNewsAlertEnabled,
+        'riskChangeAlertEnabled': riskChangeAlertEnabled,
+        'emergencyAlertEnabled': emergencyAlertEnabled,
+      },
+    ) as Map<String, dynamic>;
+    return _fromJson(json);
+  }
+
   UserProfile _fromJson(Map<String, dynamic> json) {
     return UserProfile(
       id: json['id'] as int,
@@ -44,6 +66,9 @@ class GuardianService {
       lastName: json['lastName'] as String,
       phoneNumber: json['phoneNumber'] as String,
       email: json['email'] as String,
+      dailyNewsAlertEnabled: json['dailyNewsAlertEnabled'] as bool? ?? true,
+      riskChangeAlertEnabled: json['riskChangeAlertEnabled'] as bool? ?? true,
+      emergencyAlertEnabled: json['emergencyAlertEnabled'] as bool? ?? true,
     );
   }
 }

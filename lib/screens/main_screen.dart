@@ -5,7 +5,9 @@ import '../services/api_client.dart';
 import '../services/assessment_service.dart';
 import '../services/auth_service.dart';
 import '../services/call_schedule_service.dart';
+import '../services/guardian_service.dart';
 import '../services/notification_service.dart';
+import '../services/notification_socket_service.dart';
 import '../services/recipient_service.dart';
 import '../utils/adherence_utils.dart';
 import '../utils/date_utils.dart';
@@ -40,7 +42,7 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   List<DailyAssessment>? assessments;
   CallSchedule? callSchedule;
   List<GuardianNotification>? notifications;
@@ -53,13 +55,18 @@ class _MainScreenState extends State<MainScreen> {
   bool isCalendarExpanded = false;
   int selectedTabIndex = 0;
 
-  bool dailyNewsAlertEnabled = true;
-  bool riskChangeAlertEnabled = true;
-  bool emergencySmsEnabled = true;
+  // 배지는 지금 보고 있는 대상자의 알림 화면에서 실제로 체크할 수 있는
+  // 항목 기준으로 맞춘다. notifications는 보호자가 돌보는 모든 대상자의
+  // 알림을 담고 있어서, 필터링 없이 쓰면 다른 대상자의 안 읽은 알림 때문에
+  // 지금 화면에서 다 읽어도 빨간 점이 안 사라지는 문제가 있었다.
+  bool get _hasUnreadForCurrentRecipient => (notifications ?? const [])
+      .where((n) => n.recipientId == currentRecipient.id)
+      .any((n) => !n.isRead);
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     currentRecipient = widget.recipient;
     currentUser = widget.userProfile ??
         UserProfile(
@@ -71,6 +78,21 @@ class _MainScreenState extends State<MainScreen> {
           email: '',
         );
     _loadAssessments();
+    NotificationSocketService.instance.connect();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    NotificationSocketService.instance.disconnect();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      NotificationSocketService.instance.notifyAppResumed();
+    }
   }
 
 Future<void> _loadAssessments() async {
@@ -169,6 +191,39 @@ Future<void> _deleteNotification(int id) async {
     setState(() => currentUser = updated);
     widget.onUserProfileChanged?.call(updated);
     _showSavedMessage('내 정보가 수정되었습니다.');
+  }
+
+  Future<void> _updateNotificationSetting({
+    bool? dailyNewsAlertEnabled,
+    bool? riskChangeAlertEnabled,
+    bool? emergencyAlertEnabled,
+  }) async {
+    final previous = currentUser;
+    final optimistic = previous.copyWith(
+      dailyNewsAlertEnabled: dailyNewsAlertEnabled,
+      riskChangeAlertEnabled: riskChangeAlertEnabled,
+      emergencyAlertEnabled: emergencyAlertEnabled,
+    );
+    setState(() => currentUser = optimistic);
+    widget.onUserProfileChanged?.call(optimistic);
+
+    try {
+      final updated = await GuardianService().updateNotificationSettings(
+        id: currentUser.id,
+        dailyNewsAlertEnabled: optimistic.dailyNewsAlertEnabled,
+        riskChangeAlertEnabled: optimistic.riskChangeAlertEnabled,
+        emergencyAlertEnabled: optimistic.emergencyAlertEnabled,
+      );
+      if (!mounted) return;
+      setState(() => currentUser = updated);
+      widget.onUserProfileChanged?.call(updated);
+    } catch (_) {
+      if (!mounted) return;
+      // 저장 실패 — 서버 상태와 어긋나지 않도록 되돌린다.
+      setState(() => currentUser = previous);
+      widget.onUserProfileChanged?.call(previous);
+      _showSavedMessage('알림 설정을 저장하지 못했습니다. 다시 시도해 주세요.');
+    }
   }
 
   Future<void> _editRecipient() async {
@@ -316,8 +371,7 @@ Future<void> _deleteNotification(int id) async {
             onNotificationTap: () {
               setState(() => selectedTabIndex = 2);
             },
-            hasUnreadNotification:
-                (notifications ?? const []).any((n) => !n.isRead),
+            hasUnreadNotification: _hasUnreadForCurrentRecipient,
           ),
           ConversationLogScreen(recipientId: currentRecipient.id),
           NotificationSettingsScreen(
@@ -332,19 +386,19 @@ Future<void> _deleteNotification(int id) async {
             userProfile: currentUser,
             recipient: currentRecipient,
             callSchedule: callSchedule,
-            dailyNewsAlertEnabled: dailyNewsAlertEnabled,
-            riskChangeAlertEnabled: riskChangeAlertEnabled,
-            emergencySmsEnabled: emergencySmsEnabled,
+            dailyNewsAlertEnabled: currentUser.dailyNewsAlertEnabled,
+            riskChangeAlertEnabled: currentUser.riskChangeAlertEnabled,
+            emergencySmsEnabled: currentUser.emergencyAlertEnabled,
             onEditUserProfile: _editUserProfile,
             onEditRecipient: _editRecipient,
             onDailyNewsAlertChanged: (value) {
-              setState(() => dailyNewsAlertEnabled = value);
+              _updateNotificationSetting(dailyNewsAlertEnabled: value);
             },
             onRiskChangeAlertChanged: (value) {
-              setState(() => riskChangeAlertEnabled = value);
+              _updateNotificationSetting(riskChangeAlertEnabled: value);
             },
             onEmergencySmsChanged: (value) {
-              setState(() => emergencySmsEnabled = value);
+              _updateNotificationSetting(emergencyAlertEnabled: value);
             },
             onLogout: _logout,
           ),
@@ -368,11 +422,11 @@ Future<void> _deleteNotification(int id) async {
           ),
           NavigationDestination(
             icon: Badge(
-              isLabelVisible: (notifications ?? const []).any((n) => !n.isRead),
+              isLabelVisible: _hasUnreadForCurrentRecipient,
               child: const Icon(Icons.notifications_none_rounded),
             ),
             selectedIcon: Badge(
-              isLabelVisible: (notifications ?? const []).any((n) => !n.isRead),
+              isLabelVisible: _hasUnreadForCurrentRecipient,
               child: const Icon(Icons.notifications_rounded),
             ),
             label: '알림',
