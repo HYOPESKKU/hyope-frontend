@@ -44,6 +44,7 @@ class _EditRecipientScreenState extends State<EditRecipientScreen> {
   int? _callScheduleId;
   bool _callScheduleIsActive = true;
   bool _isSaving = false;
+  bool _isCallingNow = false;
 
   @override
   void initState() {
@@ -177,6 +178,57 @@ class _EditRecipientScreenState extends State<EditRecipientScreen> {
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _callNow() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('지금 바로 통화걸기'),
+        content: Text(
+          '예약 시간과 상관없이 지금 바로 '
+          '${widget.recipient.lastName}${widget.recipient.firstName}님께 안부 전화를 거시겠습니까?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('통화 걸기'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isCallingNow = true);
+    try {
+      await RecipientService().callNow(widget.recipient.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('통화 요청을 보냈습니다. 잠시 후 전화가 갈 거예요.')),
+      );
+    } on NetworkException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('통화 요청에 실패했습니다. 네트워크를 확인해주세요.')),
+      );
+    } finally {
+      if (mounted) setState(() => _isCallingNow = false);
     }
   }
 
@@ -459,6 +511,30 @@ class _EditRecipientScreenState extends State<EditRecipientScreen> {
                     label: const Text('변경사항 저장'),
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(52),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: (_isSaving || _isCallingNow) ? null : _callNow,
+                    icon: _isCallingNow
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.phone_in_talk_outlined),
+                    label: const Text('지금 바로 통화걸기'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                      foregroundColor: const Color(0xFF2F6FED),
+                      side: const BorderSide(color: Color(0xFF2F6FED)),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),

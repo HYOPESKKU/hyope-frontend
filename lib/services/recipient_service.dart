@@ -89,6 +89,13 @@ class RecipientService {
     await _client.delete('/recipients/$id');
   }
 
+  /// 예약 시간과 무관하게 지금 바로 통화를 건다. 백엔드가 AI 서버로 통화 요청을
+  /// 비동기로 흘려보내는 즉시 202를 돌려주므로, 통화 자체가 성공했는지는 이 호출로는
+  /// 알 수 없다 — 요청이 접수됐다는 뜻으로만 처리한다.
+  Future<void> callNow(int id) async {
+    await _client.post('/recipients/$id/call-now');
+  }
+
   String relationLabel(String relationType) {
     switch (relationType) {
       case 'CHILD':
