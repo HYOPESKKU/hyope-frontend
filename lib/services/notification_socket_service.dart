@@ -97,6 +97,12 @@ class NotificationSocketService {
         uri,
         headers: {'Authorization': 'Bearer $token'},
       );
+      // * IOWebSocketChannel.connect()는 실제 연결(WebSocket.connect)을 기다리지 않고 즉시
+      // * 채널 객체를 돌려준다 — DNS 실패 같은 연결 자체의 에러는 이 아래 try/catch로 안 잡히고
+      // * channel.ready Future 안에서만 던져진다(await 안 하면 unhandled exception으로 새서
+      // * 재연결 로직이 아예 안 타고 앱 로그에 에러만 찍히는 실제 버그가 있었다). 여기서 명시적으로
+      // * await해서 실패를 정상적으로 catch 블록의 _scheduleReconnect()로 흘려보낸다.
+      await channel.ready;
       _channel = channel;
       _reconnectAttempt = 0;
       _subscription = channel.stream.listen(
